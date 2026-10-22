@@ -51,9 +51,9 @@ while running:
         title = big_font.render("Выбери своего героя", True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
         
-        text1 = font.render("1 - Паук (Темно-красный. Space: Паутина на 2 клетки)", True, (200, 0, 0))
-        text2 = font.render("2 - Гарри (70 HP. Space: Оглушение на 2 клетки)", True, (150, 50, 255))
-        text3 = font.render("3 - Ты сам (120 HP. Лечение за убийство)", True, (0, 255, 0))
+        text1 = font.render("1 - Паук (Темно-красный. Space: Паутина)", True, (200, 0, 0))
+        text2 = font.render("2 - Гарри (Маг. Space: Оглушение)", True, (150, 50, 255))
+        text3 = font.render("3 - Ты сам (Танк. Лечение за убийство)", True, (0, 255, 0))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 250))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 300))
@@ -177,6 +177,9 @@ while running:
                                     if level_map[enemy_y + step_y][enemy_x + step_x] == 0:
                                         enemy_x += step_x
                                         enemy_y += step_y
+                                        
+                if player_hp <= 0:
+                    game_state = "GAME_OVER"
 
         screen.fill((20, 20, 20))
         
@@ -221,6 +224,20 @@ while running:
             
         hint = font.render("Space - способность", True, (150, 150, 150))
         screen.blit(hint, (10, HEIGHT - 30))
+        
+    elif game_state == "GAME_OVER":
+        screen.fill((50, 0, 0))
+        go_text = big_font.render("ВЫ ПОГИБЛИ", True, (255, 0, 0))
+        screen.blit(go_text, (WIDTH//2 - go_text.get_width()//2, HEIGHT//2 - 50))
+        
+        restart_text = font.render("Нажмите R, чтобы начать заново", True, (255, 255, 255))
+        screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 20))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    game_state = "MENU"
 
     pygame.display.flip()
     clock.tick(60)
