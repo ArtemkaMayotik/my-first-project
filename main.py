@@ -113,6 +113,12 @@ while running:
                     bx, by = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
                     if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
                         barrels.append([bx, by])
+                        
+                spikes = []
+                for _ in range(10):
+                    sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+                    if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
+                        spikes.append([sx, sy])
                 
                 player_speed_boost = 0
                 has_sword = False 
@@ -172,6 +178,9 @@ while running:
                         else:
                             player_x, player_y = new_x, new_y
                             
+                            if [player_x, player_y] in spikes:
+                                player_hp -= 15
+                            
                             if potion_alive and player_x == potion_x and player_y == potion_y:
                                 inventory_potions += 1
                                 potion_alive = False
@@ -223,6 +232,11 @@ while running:
                 else:
                     pygame.draw.rect(screen, (30, 30, 30), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
                     pygame.draw.rect(screen, (45, 45, 45), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
+
+        for sx, sy in spikes:
+            pygame.draw.rect(screen, (60, 60, 60), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
+            pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
 
         for bx, by in barrels:
             pygame.draw.rect(screen, (139, 69, 19), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE))
