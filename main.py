@@ -18,6 +18,7 @@ big_font = pygame.font.SysFont("Arial", 40)
 game_state = "MENU"
 player_char = ""
 player_color = (0, 255, 0)
+portal_alive = False
 
 def draw_hp_bar(surface, x, y, current_hp, max_hp):
     bar_width = TILE_SIZE
@@ -54,6 +55,48 @@ def generate_map():
         level_map.append(row)
     return level_map
 
+def setup_level():
+    global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned
+    global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
+    global barrels, spikes, portal_alive
+    
+    level_map = generate_map()
+    player_x, player_y = 10, 7
+    level_map[player_y][player_x] = 0
+    
+    enemy_x, enemy_y = 5, 5
+    level_map[enemy_y][enemy_x] = 0
+    enemy_hp = 50
+    enemy_max_hp = 50
+    enemy_alive = True
+    enemy_stunned = 0
+    
+    potion_x, potion_y = 15, 10
+    potion_alive = True
+    level_map[potion_y][potion_x] = 0
+    
+    buff_x, buff_y = 3, 12
+    buff_alive = True
+    level_map[buff_y][buff_x] = 0
+
+    sword_x, sword_y = 16, 3
+    sword_alive = True
+    level_map[sword_y][sword_x] = 0
+    
+    barrels = []
+    for _ in range(10):
+        bx, by = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+        if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
+            barrels.append([bx, by])
+            
+    spikes = []
+    for _ in range(10):
+        sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+        if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
+            spikes.append([sx, sy])
+            
+    portal_alive = False
+
 running = True
 while running:
     if game_state == "MENU":
@@ -85,43 +128,9 @@ while running:
                     continue 
                 
                 inventory_potions = 0
-                level_map = generate_map()
-                player_x, player_y = 10, 7
-                level_map[player_y][player_x] = 0
-                
-                enemy_x, enemy_y = 5, 5
-                level_map[enemy_y][enemy_x] = 0
-                enemy_hp = 50
-                enemy_max_hp = 50
-                enemy_alive = True
-                enemy_stunned = 0
-                
-                potion_x, potion_y = 15, 10
-                potion_alive = True
-                level_map[potion_y][potion_x] = 0
-                
-                buff_x, buff_y = 3, 12
-                buff_alive = True
-                level_map[buff_y][buff_x] = 0
-
-                sword_x, sword_y = 16, 3
-                sword_alive = True
-                level_map[sword_y][sword_x] = 0
-                
-                barrels = []
-                for _ in range(10):
-                    bx, by = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-                    if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
-                        barrels.append([bx, by])
-                        
-                spikes = []
-                for _ in range(10):
-                    sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-                    if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
-                        spikes.append([sx, sy])
-                
                 player_speed_boost = 0
                 has_sword = False 
+                setup_level()
                 game_state = "PLAYING"
 
     elif game_state == "PLAYING":
@@ -154,6 +163,8 @@ while running:
                         enemy_attacked = True
                         if enemy_hp <= 0: 
                             enemy_alive = False
+                            portal_alive = True
+                            portal_x, portal_y = enemy_x, enemy_y
                             
                     elif player_char == "Гарри" and dist == 2:
                         enemy_stunned = 1
@@ -172,27 +183,32 @@ while running:
                             enemy_attacked = True
                             if enemy_hp <= 0: 
                                 enemy_alive = False
+                                portal_alive = True
+                                portal_x, portal_y = enemy_x, enemy_y
                                 if player_char == "Я сам":
                                     player_hp += 20
                                     if player_hp > player_max_hp: player_hp = player_max_hp
                         else:
                             player_x, player_y = new_x, new_y
                             
-                            if [player_x, player_y] in spikes:
-                                player_hp -= 15
-                            
-                            if potion_alive and player_x == potion_x and player_y == potion_y:
-                                inventory_potions += 1
-                                potion_alive = False
-                            
-                            if buff_alive and player_x == buff_x and player_y == buff_y:
-                                player_speed_boost = 3
-                                buff_alive = False
+                            if portal_alive and player_x == portal_x and player_y == portal_y:
+                                setup_level()
+                            else:
+                                if [player_x, player_y] in spikes:
+                                    player_hp -= 15
+                                
+                                if potion_alive and player_x == potion_x and player_y == potion_y:
+                                    inventory_potions += 1
+                                    potion_alive = False
+                                
+                                if buff_alive and player_x == buff_x and player_y == buff_y:
+                                    player_speed_boost = 3
+                                    buff_alive = False
 
-                            if sword_alive and player_x == sword_x and player_y == sword_y:
-                                has_sword = True
-                                player_atk += 25 
-                                sword_alive = False
+                                if sword_alive and player_x == sword_x and player_y == sword_y:
+                                    has_sword = True
+                                    player_atk += 25 
+                                    sword_alive = False
                             
                 if player_moved or enemy_attacked:
                     if player_speed_boost > 0:
@@ -248,6 +264,9 @@ while running:
             pygame.draw.rect(screen, (255, 255, 0), (buff_x * TILE_SIZE, buff_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         if sword_alive:
             pygame.draw.rect(screen, (220, 220, 220), (sword_x * TILE_SIZE, sword_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            
+        if portal_alive:
+            pygame.draw.rect(screen, (200, 0, 255), (portal_x * TILE_SIZE, portal_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             
         if enemy_alive:
             pygame.draw.rect(screen, (255, 50, 50), (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
