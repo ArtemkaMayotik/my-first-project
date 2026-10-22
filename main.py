@@ -85,6 +85,7 @@ while running:
                 else:
                     continue 
                 
+                inventory_potions = 0
                 level_map = generate_map()
                 player_x, player_y = 10, 7
                 level_map[player_y][player_x] = 0
@@ -127,6 +128,13 @@ while running:
                 elif event.key == pygame.K_d: new_x += 1; player_moved = True
                 elif event.key == pygame.K_ESCAPE: running = False
                 
+                elif event.key == pygame.K_e:
+                    if inventory_potions > 0 and player_hp < player_max_hp:
+                        inventory_potions -= 1
+                        player_hp += 30
+                        if player_hp > player_max_hp: player_hp = player_max_hp
+                        player_moved = True
+                
                 elif event.key == pygame.K_SPACE and enemy_alive:
                     dist = abs(player_x - enemy_x) + abs(player_y - enemy_y)
                     
@@ -154,8 +162,7 @@ while running:
                             player_x, player_y = new_x, new_y
                             
                             if potion_alive and player_x == potion_x and player_y == potion_y:
-                                player_hp += 30
-                                if player_hp > player_max_hp: player_hp = player_max_hp
+                                inventory_potions += 1
                                 potion_alive = False
                             
                             if buff_alive and player_x == buff_x and player_y == buff_y:
@@ -225,7 +232,7 @@ while running:
         draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
 
-        info_text = font.render(f"Урон: {player_atk}", True, (255, 255, 255))
+        info_text = font.render(f"Урон: {player_atk} | Зелья (E): {inventory_potions}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
         
         if has_sword:
@@ -236,7 +243,7 @@ while running:
             speed_text = font.render(f"Speed Boost: {player_speed_boost}", True, (255, 255, 0))
             screen.blit(speed_text, (10, 60))
             
-        hint = font.render("Space - способность", True, (150, 150, 150))
+        hint = font.render("Space - способность | E - выпить зелье", True, (150, 150, 150))
         screen.blit(hint, (10, HEIGHT - 30))
         
     elif game_state == "GAME_OVER":
