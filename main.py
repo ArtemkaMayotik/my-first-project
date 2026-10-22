@@ -29,6 +29,17 @@ def draw_hp_bar(surface, x, y, current_hp, max_hp):
     pygame.draw.rect(surface, (0, 255, 0), (bar_x, bar_y, bar_width * hp_ratio, bar_height))
     pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
 
+def draw_eyes(surface, x, y, target_x, target_y):
+    cx = x * TILE_SIZE + TILE_SIZE // 2
+    cy = y * TILE_SIZE + TILE_SIZE // 2
+    dx = 1 if target_x > x else (-1 if target_x < x else 0)
+    dy = 1 if target_y > y else (-1 if target_y < y else 0)
+    
+    pygame.draw.circle(surface, (255, 255, 255), (cx - 8, cy - 5), 5)
+    pygame.draw.circle(surface, (255, 255, 255), (cx + 8, cy - 5), 5)
+    pygame.draw.circle(surface, (0, 0, 0), (cx - 8 + dx*2, cy - 5 + dy*2), 2)
+    pygame.draw.circle(surface, (0, 0, 0), (cx + 8 + dx*2, cy - 5 + dy*2), 2)
+
 def generate_map():
     level_map = []
     for y in range(GRID_HEIGHT):
@@ -51,9 +62,9 @@ while running:
         title = big_font.render("Выбери своего героя", True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
         
-        text1 = font.render("1 - Паук (Темно-красный. Space: Паутина)", True, (200, 0, 0))
-        text2 = font.render("2 - Гарри (Маг. Space: Оглушение)", True, (150, 50, 255))
-        text3 = font.render("3 - Ты сам (Танк. Лечение за убийство)", True, (0, 255, 0))
+        text1 = font.render("1 - Паук (Space: Паутина)", True, (200, 0, 0))
+        text2 = font.render("2 - Гарри (Space: Оглушение)", True, (150, 50, 255))
+        text3 = font.render("3 - Ты сам (Лечение за убийство)", True, (0, 255, 0))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 250))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 300))
@@ -188,11 +199,12 @@ while running:
                 pixel_x = x * TILE_SIZE
                 pixel_y = y * TILE_SIZE
                 if level_map[y][x] == 1:
-                    pygame.draw.rect(screen, (100, 100, 100), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
-                    pygame.draw.rect(screen, (50, 50, 50), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 2)
+                    pygame.draw.rect(screen, (80, 80, 80), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.rect(screen, (110, 110, 110), (pixel_x, pixel_y, TILE_SIZE, 10))
+                    pygame.draw.rect(screen, (40, 40, 40), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
                 else:
-                    pygame.draw.rect(screen, (40, 40, 40), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
-                    pygame.draw.rect(screen, (60, 60, 60), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
+                    pygame.draw.rect(screen, (30, 30, 30), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.rect(screen, (45, 45, 45), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
 
         if potion_alive:
             pygame.draw.rect(screen, (0, 150, 255), (potion_x * TILE_SIZE, potion_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
@@ -203,12 +215,14 @@ while running:
             
         if enemy_alive:
             pygame.draw.rect(screen, (255, 50, 50), (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
             draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
             
             if enemy_stunned > 0:
                 pygame.draw.circle(screen, (255, 255, 0), (enemy_x * TILE_SIZE + 20, enemy_y * TILE_SIZE - 20), 5)
 
         pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
 
         info_text = font.render(f"Урон: {player_atk}", True, (255, 255, 255))
