@@ -2,7 +2,6 @@ import pygame
 import sys
 import random
 
-# 1. Инициализация
 pygame.init()
 TILE_SIZE = 40
 GRID_WIDTH = 20
@@ -20,22 +19,14 @@ game_state = "MENU"
 player_char = ""
 player_color = (0, 255, 0)
 
-# Функция для отрисовки полоски здоровья
 def draw_hp_bar(surface, x, y, current_hp, max_hp):
     bar_width = TILE_SIZE
     bar_height = 6
-    # Позиция над объектом
     bar_x = x * TILE_SIZE
     bar_y = y * TILE_SIZE - 10 
-    
-    # Задний фон (красный - пустое здоровье)
     pygame.draw.rect(surface, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-    
-    # Текущее здоровье (зеленое)
-    hp_ratio = max(0, current_hp / max_hp) # Защита от отрицательного значения
+    hp_ratio = max(0, current_hp / max_hp) 
     pygame.draw.rect(surface, (0, 255, 0), (bar_x, bar_y, bar_width * hp_ratio, bar_height))
-    
-    # Рамка для красоты
     pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
 
 def generate_map():
@@ -55,16 +46,14 @@ def generate_map():
 
 running = True
 while running:
-    
-    # МЕНЮ
     if game_state == "MENU":
         screen.fill((20, 20, 20))
         title = big_font.render("Выбери своего героя", True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
         
-        text1 = font.render("1 - Паук (Быстрый, 50 HP, Урон 20)", True, (255, 50, 50))
-        text2 = font.render("2 - Гарри (Маг, 70 HP, Урон 30)", True, (150, 50, 255))
-        text3 = font.render("3 - Ты сам (Танк, 120 HP, Урон 15)", True, (0, 255, 0))
+        text1 = font.render("1 - Паук (Темно-красный. Space: Паутина на 2 клетки)", True, (200, 0, 0))
+        text2 = font.render("2 - Гарри (70 HP. Space: Оглушение на 2 клетки)", True, (150, 50, 255))
+        text3 = font.render("3 - Ты сам (120 HP. Лечение за убийство)", True, (0, 255, 0))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 250))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 300))
@@ -74,7 +63,7 @@ while running:
             if event.type == pygame.QUIT: running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
-                    player_char, player_color = "Паук", (255, 50, 50)
+                    player_char, player_color = "Паук", (200, 0, 0)
                     player_hp, player_max_hp, player_atk = 50, 50, 20
                 elif event.key == pygame.K_2:
                     player_char, player_color = "Гарри", (150, 50, 255)
@@ -92,8 +81,9 @@ while running:
                 enemy_x, enemy_y = 5, 5
                 level_map[enemy_y][enemy_x] = 0
                 enemy_hp = 50
-                enemy_max_hp = 50 # Добавили максимальное HP для врага
+                enemy_max_hp = 50
                 enemy_alive = True
+                enemy_stunned = 0
                 
                 potion_x, potion_y = 15, 10
                 potion_alive = True
@@ -111,7 +101,6 @@ while running:
                 has_sword = False 
                 game_state = "PLAYING"
 
-    # ИГРА
     elif game_state == "PLAYING":
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
@@ -119,6 +108,7 @@ while running:
             if event.type == pygame.KEYDOWN:
                 new_x, new_y = player_x, player_y
                 player_moved = False
+                enemy_attacked = False
                 
                 if event.key == pygame.K_w: new_y -= 1; player_moved = True
                 elif event.key == pygame.K_s: new_y += 1; player_moved = True
@@ -126,11 +116,29 @@ while running:
                 elif event.key == pygame.K_d: new_x += 1; player_moved = True
                 elif event.key == pygame.K_ESCAPE: running = False
                 
+                elif event.key == pygame.K_SPACE and enemy_alive:
+                    dist = abs(player_x - enemy_x) + abs(player_y - enemy_y)
+                    
+                    if player_char == "Паук" and dist == 2:
+                        enemy_hp -= player_atk
+                        enemy_attacked = True
+                        if enemy_hp <= 0: 
+                            enemy_alive = False
+                            
+                    elif player_char == "Гарри" and dist == 2:
+                        enemy_stunned = 1
+                        enemy_attacked = True
+                
                 if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT:
                     if level_map[new_y][new_x] == 0:
                         if enemy_alive and new_x == enemy_x and new_y == enemy_y:
                             enemy_hp -= player_atk
-                            if enemy_hp <= 0: enemy_alive = False
+                            enemy_attacked = True
+                            if enemy_hp <= 0: 
+                                enemy_alive = False
+                                if player_char == "Я сам":
+                                    player_hp += 20
+                                    if player_hp > player_max_hp: player_hp = player_max_hp
                         else:
                             player_x, player_y = new_x, new_y
                             
@@ -148,26 +156,28 @@ while running:
                                 player_atk += 25 
                                 sword_alive = False
                             
-                if player_moved:
+                if player_moved or enemy_attacked:
                     if player_speed_boost > 0:
                         player_speed_boost -= 1 
                     else:
                         if enemy_alive:
-                            dx = player_x - enemy_x
-                            dy = player_y - enemy_y
-                            if abs(dx) + abs(dy) == 1: 
-                                player_hp -= 10
-                            else: 
-                                step_x, step_y = 0, 0
-                                if dx > 0: step_x = 1
-                                elif dx < 0: step_x = -1
-                                elif dy > 0: step_y = 1
-                                elif dy < 0: step_y = -1
-                                if level_map[enemy_y + step_y][enemy_x + step_x] == 0:
-                                    enemy_x += step_x
-                                    enemy_y += step_y
+                            if enemy_stunned > 0:
+                                enemy_stunned -= 1
+                            else:
+                                dx = player_x - enemy_x
+                                dy = player_y - enemy_y
+                                if abs(dx) + abs(dy) == 1: 
+                                    player_hp -= 10
+                                else: 
+                                    step_x, step_y = 0, 0
+                                    if dx > 0: step_x = 1
+                                    elif dx < 0: step_x = -1
+                                    elif dy > 0: step_y = 1
+                                    elif dy < 0: step_y = -1
+                                    if level_map[enemy_y + step_y][enemy_x + step_x] == 0:
+                                        enemy_x += step_x
+                                        enemy_y += step_y
 
-        # ОТРИСОВКА
         screen.fill((20, 20, 20))
         
         for y in range(GRID_HEIGHT):
@@ -188,16 +198,16 @@ while running:
         if sword_alive:
             pygame.draw.rect(screen, (220, 220, 220), (sword_x * TILE_SIZE, sword_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             
-        # Отрисовка Врага и его HP
         if enemy_alive:
             pygame.draw.rect(screen, (255, 50, 50), (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp) # Рисуем полоску врага
+            draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
+            
+            if enemy_stunned > 0:
+                pygame.draw.circle(screen, (255, 255, 0), (enemy_x * TILE_SIZE + 20, enemy_y * TILE_SIZE - 20), 5)
 
-        # Отрисовка Игрока и его HP
         pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-        draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp) # Рисуем полоску игрока
+        draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
 
-        # Интерфейс (оставили только урон и бонусы)
         info_text = font.render(f"Урон: {player_atk}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
         
@@ -208,6 +218,9 @@ while running:
         if player_speed_boost > 0:
             speed_text = font.render(f"Speed Boost: {player_speed_boost}", True, (255, 255, 0))
             screen.blit(speed_text, (10, 60))
+            
+        hint = font.render("Space - способность", True, (150, 150, 150))
+        screen.blit(hint, (10, HEIGHT - 30))
 
     pygame.display.flip()
     clock.tick(60)
