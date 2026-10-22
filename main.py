@@ -34,7 +34,6 @@ def draw_eyes(surface, x, y, target_x, target_y):
     cy = y * TILE_SIZE + TILE_SIZE // 2
     dx = 1 if target_x > x else (-1 if target_x < x else 0)
     dy = 1 if target_y > y else (-1 if target_y < y else 0)
-    
     pygame.draw.circle(surface, (255, 255, 255), (cx - 8, cy - 5), 5)
     pygame.draw.circle(surface, (255, 255, 255), (cx + 8, cy - 5), 5)
     pygame.draw.circle(surface, (0, 0, 0), (cx - 8 + dx*2, cy - 5 + dy*2), 2)
@@ -109,6 +108,12 @@ while running:
                 sword_alive = True
                 level_map[sword_y][sword_x] = 0
                 
+                barrels = []
+                for _ in range(10):
+                    bx, by = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+                    if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
+                        barrels.append([bx, by])
+                
                 player_speed_boost = 0
                 has_sword = False 
                 game_state = "PLAYING"
@@ -150,7 +155,13 @@ while running:
                 
                 if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT:
                     if level_map[new_y][new_x] == 0:
-                        if enemy_alive and new_x == enemy_x and new_y == enemy_y:
+                        if [new_x, new_y] in barrels:
+                            barrels.remove([new_x, new_y])
+                            if random.random() < 0.5:
+                                inventory_potions += 1
+                            player_moved = True
+                            
+                        elif enemy_alive and new_x == enemy_x and new_y == enemy_y:
                             enemy_hp -= player_atk
                             enemy_attacked = True
                             if enemy_hp <= 0: 
@@ -212,6 +223,10 @@ while running:
                 else:
                     pygame.draw.rect(screen, (30, 30, 30), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
                     pygame.draw.rect(screen, (45, 45, 45), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
+
+        for bx, by in barrels:
+            pygame.draw.rect(screen, (139, 69, 19), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.rect(screen, (80, 40, 10), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE), 2)
 
         if potion_alive:
             pygame.draw.rect(screen, (0, 150, 255), (potion_x * TILE_SIZE, potion_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
