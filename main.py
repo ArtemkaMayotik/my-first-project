@@ -61,6 +61,7 @@ is_boss_level = False
 boss_hits = 0
 ult_used = False
 toxic_tiles = []
+torches = []
 
 has_staff = False
 staff_uses = 0
@@ -105,7 +106,7 @@ def generate_map():
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
-    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun
+    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -115,6 +116,13 @@ def setup_level():
     boss_hits = 0
     ult_used = False
     player_stun = 0
+    
+    torches = []
+    for ty in range(GRID_HEIGHT):
+        for tx in range(GRID_WIDTH):
+            if level_map[ty][tx] == 1 and 0 < tx < GRID_WIDTH-1 and 0 < ty < GRID_HEIGHT-1:
+                if random.random() < 0.1:
+                    torches.append([tx, ty])
     
     if current_level % 3 == 0:
         is_boss_level = True
@@ -397,6 +405,12 @@ while running:
                         
                     if (x * 3 + y * 7) % 11 == 0:
                         pygame.draw.line(screen, (20, 20, 25), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
+                        
+        for tx, ty in torches:
+            pygame.draw.circle(screen, (100, 60, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 12)
+            pygame.draw.circle(screen, (255, 120, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 7)
+            pygame.draw.circle(screen, (255, 220, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 4)
+            pygame.draw.rect(screen, (80, 40, 0), (tx*TILE_SIZE + 16, ty*TILE_SIZE + 20, 8, 15))
 
         for tx, ty in toxic_tiles:
             pygame.draw.rect(screen, (50, 200, 50), (tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE))
