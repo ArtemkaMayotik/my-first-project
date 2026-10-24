@@ -16,6 +16,14 @@ font = pygame.font.SysFont("Arial", 20)
 big_font = pygame.font.SysFont("Arial", 40)
 name_font = pygame.font.SysFont("Arial", 14, bold=True)
 
+try:
+    player_img = pygame.image.load("player.png").convert_alpha()
+    player_img = pygame.transform.scale(player_img, (TILE_SIZE, TILE_SIZE))
+    has_player_img = True
+except Exception as e:
+    print("ОШИБКА ЗАГРУЗКИ КАРТИНКИ:", e)
+    has_player_img = False
+
 game_state = "MENU"
 player_char = ""
 player_color = (0, 255, 0)
@@ -326,8 +334,13 @@ while running:
                 pygame.draw.circle(screen, (255, 255, 0), (enemy_x * TILE_SIZE + 20, enemy_y * TILE_SIZE - 20), 5)
 
         pygame.draw.ellipse(screen, (10, 10, 15), (player_x * TILE_SIZE + 5, player_y * TILE_SIZE + 25, 30, 10))
-        pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-        draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
+        
+        if has_player_img:
+            screen.blit(player_img, (player_x * TILE_SIZE, player_y * TILE_SIZE))
+        else:
+            pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
+            
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
         
         name_text = name_font.render(player_char, True, (255, 255, 255))
