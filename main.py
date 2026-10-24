@@ -62,6 +62,7 @@ boss_hits = 0
 ult_used = False
 toxic_tiles = []
 torches = []
+blood_splats = []
 
 has_staff = False
 staff_uses = 0
@@ -106,7 +107,7 @@ def generate_map():
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
-    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches
+    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -116,6 +117,7 @@ def setup_level():
     boss_hits = 0
     ult_used = False
     player_stun = 0
+    blood_splats = []
     
     torches = []
     for ty in range(GRID_HEIGHT):
@@ -263,6 +265,9 @@ while running:
                             enemy_hp -= player_atk
                             
                         enemy_attacked = True
+                        blood_splats.append([enemy_x, enemy_y])
+                        if len(blood_splats) > 30: blood_splats.pop(0)
+                        
                         if is_boss_level and enemy_hp > 0:
                             boss_hits += 1
                         if enemy_hp <= 0: 
@@ -293,6 +298,9 @@ while running:
                                 enemy_hp -= player_atk
                                 
                             enemy_attacked = True
+                            blood_splats.append([enemy_x, enemy_y])
+                            if len(blood_splats) > 30: blood_splats.pop(0)
+                            
                             if is_boss_level and enemy_hp > 0:
                                 boss_hits += 1
                             if enemy_hp <= 0: 
@@ -307,6 +315,8 @@ while running:
                             
                             if [player_x, player_y] in toxic_tiles:
                                 player_hp -= int(player_max_hp * 0.3)
+                                blood_splats.append([player_x, player_y])
+                                if len(blood_splats) > 30: blood_splats.pop(0)
                                 if player_hp < 1: player_hp = 1
                             
                             if portal_alive and player_x == portal_x and player_y == portal_y:
@@ -315,6 +325,8 @@ while running:
                             else:
                                 if [player_x, player_y] in spikes:
                                     player_hp -= 15
+                                    blood_splats.append([player_x, player_y])
+                                    if len(blood_splats) > 30: blood_splats.pop(0)
                                 
                                 if potion_alive and player_x == potion_x and player_y == potion_y:
                                     inventory_potions += 1
@@ -360,6 +372,8 @@ while running:
                                     dy = player_y - enemy_y
                                     if abs(dx) + abs(dy) == 1: 
                                         player_hp -= enemy_atk
+                                        blood_splats.append([player_x, player_y])
+                                        if len(blood_splats) > 30: blood_splats.pop(0)
                                         break
                                     else: 
                                         step_x, step_y = 0, 0
@@ -406,6 +420,18 @@ while running:
                     if (x * 3 + y * 7) % 11 == 0:
                         pygame.draw.line(screen, (20, 20, 25), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
                         
+        if current_level == 1:
+            sx, sy = 10, 7
+            pygame.draw.rect(screen, (50, 50, 50), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+10), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+10), 3)
+            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+20), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+20), 3)
+            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+30), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+30), 3)
+
+        for bx, by in blood_splats:
+            pygame.draw.circle(screen, (120, 0, 0), (bx * TILE_SIZE + 15, by * TILE_SIZE + 25), 6)
+            pygame.draw.circle(screen, (90, 0, 0), (bx * TILE_SIZE + 25, by * TILE_SIZE + 30), 4)
+            pygame.draw.circle(screen, (100, 0, 0), (bx * TILE_SIZE + 10, by * TILE_SIZE + 35), 3)
+
         for tx, ty in torches:
             pygame.draw.circle(screen, (100, 60, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 12)
             pygame.draw.circle(screen, (255, 120, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 7)
