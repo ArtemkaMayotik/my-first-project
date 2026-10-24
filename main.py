@@ -265,12 +265,15 @@ while running:
                 pixel_x = x * TILE_SIZE
                 pixel_y = y * TILE_SIZE
                 if level_map[y][x] == 1:
-                    pygame.draw.rect(screen, (80, 80, 80), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
-                    pygame.draw.rect(screen, (110, 110, 110), (pixel_x, pixel_y, TILE_SIZE, 10))
-                    pygame.draw.rect(screen, (40, 40, 40), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
+                    pygame.draw.rect(screen, (60, 60, 70), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.line(screen, (40, 40, 50), (pixel_x, pixel_y + 20), (pixel_x + TILE_SIZE, pixel_y + 20), 2)
+                    pygame.draw.line(screen, (40, 40, 50), (pixel_x + 20, pixel_y), (pixel_x + 20, pixel_y + 20), 2)
+                    pygame.draw.line(screen, (40, 40, 50), (pixel_x + 10, pixel_y + 20), (pixel_x + 10, pixel_y + TILE_SIZE), 2)
+                    pygame.draw.line(screen, (40, 40, 50), (pixel_x + 30, pixel_y + 20), (pixel_x + 30, pixel_y + TILE_SIZE), 2)
+                    pygame.draw.rect(screen, (30, 30, 40), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
                 else:
-                    pygame.draw.rect(screen, (30, 30, 30), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
-                    pygame.draw.rect(screen, (45, 45, 45), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
+                    floor_color = (25, 25, 30) if (x + y) % 2 == 0 else (30, 30, 35)
+                    pygame.draw.rect(screen, floor_color, (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
 
         for sx, sy in spikes:
             pygame.draw.rect(screen, (60, 60, 60), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
