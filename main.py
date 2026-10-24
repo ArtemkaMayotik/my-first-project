@@ -14,6 +14,7 @@ pygame.display.set_caption("Dungeon Run")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 20)
 big_font = pygame.font.SysFont("Arial", 40)
+name_font = pygame.font.SysFont("Arial", 14, bold=True)
 
 game_state = "MENU"
 player_char = ""
@@ -309,6 +310,9 @@ while running:
         pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
+        
+        name_text = name_font.render(player_char, True, (255, 255, 255))
+        screen.blit(name_text, (player_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_y * TILE_SIZE - 25))
 
         info_text = font.render(f"Урон: {player_atk} | Зелья (E): {inventory_potions}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
