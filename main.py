@@ -58,7 +58,7 @@ def generate_map():
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
-    global barrels, spikes, portal_alive
+    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -104,6 +104,12 @@ def setup_level():
         sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
         if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
             spikes.append([sx, sy])
+
+    chest_x, chest_y = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+    if level_map[chest_y][chest_x] == 0 and (chest_x, chest_y) != (player_x, player_y) and (chest_x, chest_y) != (enemy_x, enemy_y) and [chest_x, chest_y] not in barrels and [chest_x, chest_y] not in spikes:
+        chest_alive = True
+    else:
+        chest_alive = False
             
     portal_alive = False
 
@@ -219,6 +225,11 @@ while running:
                                     has_sword = True
                                     player_atk += 25 
                                     sword_alive = False
+                                    
+                                if chest_alive and player_x == chest_x and player_y == chest_y:
+                                    player_max_hp += 20
+                                    player_hp += 20
+                                    chest_alive = False
                             
                 if player_moved or enemy_attacked:
                     if player_speed_boost > 0:
@@ -269,6 +280,10 @@ while running:
         for bx, by in barrels:
             pygame.draw.rect(screen, (139, 69, 19), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             pygame.draw.rect(screen, (80, 40, 10), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE), 2)
+
+        if chest_alive:
+            pygame.draw.rect(screen, (255, 215, 0), (chest_x * TILE_SIZE, chest_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.rect(screen, (139, 69, 19), (chest_x * TILE_SIZE + 15, chest_y * TILE_SIZE + 15, 10, 10))
 
         if potion_alive:
             pygame.draw.rect(screen, (0, 150, 255), (potion_x * TILE_SIZE, potion_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
