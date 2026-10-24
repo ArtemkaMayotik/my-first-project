@@ -266,7 +266,9 @@ while running:
                 pixel_x = x * TILE_SIZE
                 pixel_y = y * TILE_SIZE
                 if level_map[y][x] == 1:
-                    pygame.draw.rect(screen, (60, 60, 70), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
+                    shade = (x * 7 + y * 13) % 10 - 5
+                    wall_col = (60 + shade, 60 + shade, 70 + shade)
+                    pygame.draw.rect(screen, wall_col, (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x, pixel_y + 20), (pixel_x + TILE_SIZE, pixel_y + 20), 2)
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x + 20, pixel_y), (pixel_x + 20, pixel_y + 20), 2)
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x + 10, pixel_y + 20), (pixel_x + 10, pixel_y + TILE_SIZE), 2)
@@ -275,6 +277,19 @@ while running:
                 else:
                     floor_color = (25, 25, 30) if (x + y) % 2 == 0 else (30, 30, 35)
                     pygame.draw.rect(screen, floor_color, (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
+                    
+                    shadow_col = (15, 15, 20)
+                    if y > 0 and level_map[y-1][x] == 1:
+                        pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y, TILE_SIZE, 8))
+                    if y < GRID_HEIGHT - 1 and level_map[y+1][x] == 1:
+                        pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y + TILE_SIZE - 8, TILE_SIZE, 8))
+                    if x > 0 and level_map[y][x-1] == 1:
+                        pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y, 8, TILE_SIZE))
+                    if x < GRID_WIDTH - 1 and level_map[y][x+1] == 1:
+                        pygame.draw.rect(screen, shadow_col, (pixel_x + TILE_SIZE - 8, pixel_y, 8, TILE_SIZE))
+                        
+                    if (x * 3 + y * 7) % 11 == 0:
+                        pygame.draw.line(screen, (20, 20, 25), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
 
         for sx, sy in spikes:
             pygame.draw.rect(screen, (60, 60, 60), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
@@ -282,10 +297,12 @@ while running:
             pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
 
         for bx, by in barrels:
+            pygame.draw.ellipse(screen, (10, 10, 15), (bx * TILE_SIZE + 5, by * TILE_SIZE + 25, 30, 10))
             pygame.draw.rect(screen, (139, 69, 19), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             pygame.draw.rect(screen, (80, 40, 10), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE), 2)
 
         if chest_alive:
+            pygame.draw.ellipse(screen, (10, 10, 15), (chest_x * TILE_SIZE + 5, chest_y * TILE_SIZE + 25, 30, 10))
             pygame.draw.rect(screen, (255, 215, 0), (chest_x * TILE_SIZE, chest_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             pygame.draw.rect(screen, (139, 69, 19), (chest_x * TILE_SIZE + 15, chest_y * TILE_SIZE + 15, 10, 10))
 
@@ -300,6 +317,7 @@ while running:
             pygame.draw.rect(screen, (200, 0, 255), (portal_x * TILE_SIZE, portal_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             
         if enemy_alive:
+            pygame.draw.ellipse(screen, (10, 10, 15), (enemy_x * TILE_SIZE + 5, enemy_y * TILE_SIZE + 25, 30, 10))
             pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
             draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
@@ -307,6 +325,7 @@ while running:
             if enemy_stunned > 0:
                 pygame.draw.circle(screen, (255, 255, 0), (enemy_x * TILE_SIZE + 20, enemy_y * TILE_SIZE - 20), 5)
 
+        pygame.draw.ellipse(screen, (10, 10, 15), (player_x * TILE_SIZE + 5, player_y * TILE_SIZE + 25, 30, 10))
         pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
