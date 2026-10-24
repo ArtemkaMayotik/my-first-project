@@ -62,6 +62,10 @@ boss_hits = 0
 ult_used = False
 toxic_tiles = []
 
+has_staff = False
+staff_uses = 0
+player_stun = 0
+
 def draw_hp_bar(surface, x, y, current_hp, max_hp, width=TILE_SIZE):
     bar_height = 6
     bar_x = x * TILE_SIZE
@@ -101,7 +105,7 @@ def generate_map():
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
-    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles
+    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -110,6 +114,7 @@ def setup_level():
     toxic_tiles = []
     boss_hits = 0
     ult_used = False
+    player_stun = 0
     
     if current_level % 3 == 0:
         is_boss_level = True
@@ -203,6 +208,8 @@ while running:
                 inventory_potions = 0
                 player_speed_boost = 0
                 has_sword = False 
+                has_staff = False
+                staff_uses = 0
                 setup_level()
                 game_state = "PLAYING"
 
@@ -215,10 +222,16 @@ while running:
                 player_moved = False
                 enemy_attacked = False
                 
-                if event.key == pygame.K_w: new_y -= 1; player_moved = True
-                elif event.key == pygame.K_s: new_y += 1; player_moved = True
-                elif event.key == pygame.K_a: new_x -= 1; player_moved = True
-                elif event.key == pygame.K_d: new_x += 1; player_moved = True
+                if event.key in (pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d):
+                    if player_stun > 0:
+                        player_stun -= 1
+                        player_moved = True
+                    else:
+                        if event.key == pygame.K_w: new_y -= 1; player_moved = True
+                        elif event.key == pygame.K_s: new_y += 1; player_moved = True
+                        elif event.key == pygame.K_a: new_x -= 1; player_moved = True
+                        elif event.key == pygame.K_d: new_x += 1; player_moved = True
+                        
                 elif event.key == pygame.K_ESCAPE: running = False
                 
                 elif event.key == pygame.K_e:
@@ -232,7 +245,15 @@ while running:
                     dist = abs(player_x - enemy_x) + abs(player_y - enemy_y)
                     
                     if player_char == "Паук" and dist == 2:
-                        enemy_hp -= player_atk
+                        if has_staff and staff_uses > 0:
+                            enemy_hp -= enemy_max_hp // 2
+                            staff_uses -= 1
+                            player_stun = 1
+                            if staff_uses <= 0:
+                                has_staff = False
+                        else:
+                            enemy_hp -= player_atk
+                            
                         enemy_attacked = True
                         if is_boss_level and enemy_hp > 0:
                             boss_hits += 1
@@ -254,7 +275,15 @@ while running:
                             player_moved = True
                             
                         elif enemy_alive and new_x == enemy_x and new_y == enemy_y:
-                            enemy_hp -= player_atk
+                            if has_staff and staff_uses > 0:
+                                enemy_hp -= enemy_max_hp // 2
+                                staff_uses -= 1
+                                player_stun = 1
+                                if staff_uses <= 0:
+                                    has_staff = False
+                            else:
+                                enemy_hp -= player_atk
+                                
                             enemy_attacked = True
                             if is_boss_level and enemy_hp > 0:
                                 boss_hits += 1
@@ -294,7 +323,8 @@ while running:
                                     
                                 if chest_alive and player_x == chest_x and player_y == chest_y:
                                     if is_boss_level:
-                                        player_atk += 40
+                                        has_staff = True
+                                        staff_uses = 2
                                     else:
                                         player_max_hp += 20
                                         player_hp += 20
@@ -443,13 +473,20 @@ while running:
         info_text = font.render(f"Урон: {player_atk} | Зелья (E): {inventory_potions}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
         
-        if has_sword:
+        if has_staff:
+            staff_text = font.render(f"Сломанный посох воина (удары: {staff_uses})", True, (255, 165, 0))
+            screen.blit(staff_text, (10, 35))
+        elif has_sword:
             sword_text = font.render("В руках: Меч (+25)", True, (220, 220, 220))
             screen.blit(sword_text, (10, 35))
 
         if player_speed_boost > 0:
             speed_text = font.render(f"Speed Boost: {player_speed_boost}", True, (255, 255, 0))
             screen.blit(speed_text, (10, 60))
+
+        if player_stun > 0:
+            stun_text = font.render("ЗАМЕДЛЕНИЕ (ход пропущен)", True, (255, 0, 0))
+            screen.blit(stun_text, (10, 85))
             
         if is_boss_level and ult_used:
             boss_text = font.render("БОСС В ЯРОСТИ! БЕРЕГИСЬ ЯДА!", True, (255, 50, 50))
