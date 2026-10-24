@@ -18,7 +18,7 @@ name_font = pygame.font.SysFont("Arial", 14, bold=True)
 
 try:
     player_img = pygame.image.load("player.png").convert_alpha()
-    player_img = pygame.transform.scale(player_img, (TILE_SIZE, TILE_SIZE))
+    player_img = pygame.transform.scale(player_img, (TILE_SIZE * 2, TILE_SIZE * 2))
     has_player_img = True
 except Exception as e:
     print("ОШИБКА ЗАГРУЗКИ КАРТИНКИ:", e)
@@ -336,7 +336,7 @@ while running:
         pygame.draw.ellipse(screen, (10, 10, 15), (player_x * TILE_SIZE + 5, player_y * TILE_SIZE + 25, 30, 10))
         
         if has_player_img:
-            screen.blit(player_img, (player_x * TILE_SIZE, player_y * TILE_SIZE))
+            screen.blit(player_img, (player_x * TILE_SIZE - TILE_SIZE // 2, player_y * TILE_SIZE - TILE_SIZE // 2))
         else:
             pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
@@ -344,7 +344,7 @@ while running:
         draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
         
         name_text = name_font.render(player_char, True, (255, 255, 255))
-        screen.blit(name_text, (player_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_y * TILE_SIZE - 25))
+        screen.blit(name_text, (player_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_y * TILE_SIZE - 30))
 
         info_text = font.render(f"Урон: {player_atk} | Зелья (E): {inventory_potions}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
