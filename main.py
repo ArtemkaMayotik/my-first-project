@@ -21,19 +21,33 @@ try:
     player_img = pygame.transform.scale(player_img, (TILE_SIZE * 2, TILE_SIZE * 2))
     has_player_img = True
 except Exception as e:
-    print("ОШИБКА ЗАГРУЗКИ КАРТИНКИ:", e)
     has_player_img = False
+
+try:
+    slime_img = pygame.image.load("slime.png").convert_alpha()
+    slime_img = pygame.transform.scale(slime_img, (TILE_SIZE * 2, TILE_SIZE * 2))
+    has_slime_img = True
+except Exception as e:
+    has_slime_img = False
+
+try:
+    rat_img = pygame.image.load("rat.png").convert_alpha()
+    rat_img = pygame.transform.scale(rat_img, (TILE_SIZE * 2, TILE_SIZE * 2))
+    has_rat_img = True
+except Exception as e:
+    has_rat_img = False
 
 game_state = "MENU"
 player_char = ""
 player_color = (0, 255, 0)
 portal_alive = False
+enemy_type = "slime"
 
 def draw_hp_bar(surface, x, y, current_hp, max_hp):
     bar_width = TILE_SIZE
     bar_height = 6
     bar_x = x * TILE_SIZE
-    bar_y = y * TILE_SIZE - 10 
+    bar_y = y * TILE_SIZE - 15
     pygame.draw.rect(surface, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
     hp_ratio = max(0, current_hp / max_hp) 
     pygame.draw.rect(surface, (0, 255, 0), (bar_x, bar_y, bar_width * hp_ratio, bar_height))
@@ -65,7 +79,7 @@ def generate_map():
     return level_map
 
 def setup_level():
-    global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color
+    global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
     global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive
     
@@ -326,8 +340,15 @@ while running:
             
         if enemy_alive:
             pygame.draw.ellipse(screen, (10, 10, 15), (enemy_x * TILE_SIZE + 5, enemy_y * TILE_SIZE + 25, 30, 10))
-            pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
+            
+            if enemy_type == "slime" and has_slime_img:
+                screen.blit(slime_img, (enemy_x * TILE_SIZE - TILE_SIZE // 2, enemy_y * TILE_SIZE - TILE_SIZE // 2))
+            elif enemy_type == "rat" and has_rat_img:
+                screen.blit(rat_img, (enemy_x * TILE_SIZE - TILE_SIZE // 2, enemy_y * TILE_SIZE - TILE_SIZE // 2))
+            else:
+                pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
+                
             draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
             
             if enemy_stunned > 0:
