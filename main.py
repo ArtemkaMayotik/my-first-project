@@ -44,6 +44,13 @@ try:
 except:
     has_boss_img = False
 
+try:
+    weapon_img = pygame.image.load("weapon1.png").convert_alpha()
+    weapon_img = pygame.transform.scale(weapon_img, (TILE_SIZE * 2, TILE_SIZE * 2))
+    has_weapon_img = True
+except:
+    has_weapon_img = False
+
 game_state = "MENU"
 player_char = ""
 player_color = (0, 255, 0)
@@ -286,8 +293,11 @@ while running:
                                     sword_alive = False
                                     
                                 if chest_alive and player_x == chest_x and player_y == chest_y:
-                                    player_max_hp += 20
-                                    player_hp += 20
+                                    if is_boss_level:
+                                        player_atk += 40
+                                    else:
+                                        player_max_hp += 20
+                                        player_hp += 20
                                     chest_alive = False
                             
                 if is_boss_level and boss_hits >= 2 and not ult_used and enemy_alive:
@@ -376,8 +386,11 @@ while running:
 
         if chest_alive:
             pygame.draw.ellipse(screen, (10, 10, 15), (chest_x * TILE_SIZE + 5, chest_y * TILE_SIZE + 25, 30, 10))
-            pygame.draw.rect(screen, (255, 215, 0), (chest_x * TILE_SIZE, chest_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            pygame.draw.rect(screen, (139, 69, 19), (chest_x * TILE_SIZE + 15, chest_y * TILE_SIZE + 15, 10, 10))
+            if is_boss_level and has_weapon_img:
+                screen.blit(weapon_img, (chest_x * TILE_SIZE - TILE_SIZE // 2, chest_y * TILE_SIZE - TILE_SIZE // 2))
+            else:
+                pygame.draw.rect(screen, (255, 215, 0), (chest_x * TILE_SIZE, chest_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                pygame.draw.rect(screen, (139, 69, 19), (chest_x * TILE_SIZE + 15, chest_y * TILE_SIZE + 15, 10, 10))
 
         if potion_alive:
             pygame.draw.rect(screen, (0, 150, 255), (potion_x * TILE_SIZE, potion_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
