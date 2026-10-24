@@ -56,7 +56,7 @@ def generate_map():
     return level_map
 
 def setup_level():
-    global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned
+    global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
     global barrels, spikes, portal_alive
     
@@ -64,10 +64,20 @@ def setup_level():
     player_x, player_y = 10, 7
     level_map[player_y][player_x] = 0
     
+    enemy_type = random.choice(["slime", "rat"])
+    if enemy_type == "slime":
+        enemy_hp, enemy_max_hp = 50, 50
+        enemy_atk = 10
+        enemy_speed = 1
+        enemy_color = (255, 50, 50)
+    else:
+        enemy_hp, enemy_max_hp = 30, 30
+        enemy_atk = 5
+        enemy_speed = 2
+        enemy_color = (160, 82, 45)
+
     enemy_x, enemy_y = 5, 5
     level_map[enemy_y][enemy_x] = 0
-    enemy_hp = 50
-    enemy_max_hp = 50
     enemy_alive = True
     enemy_stunned = 0
     
@@ -218,19 +228,21 @@ while running:
                             if enemy_stunned > 0:
                                 enemy_stunned -= 1
                             else:
-                                dx = player_x - enemy_x
-                                dy = player_y - enemy_y
-                                if abs(dx) + abs(dy) == 1: 
-                                    player_hp -= 10
-                                else: 
-                                    step_x, step_y = 0, 0
-                                    if dx > 0: step_x = 1
-                                    elif dx < 0: step_x = -1
-                                    elif dy > 0: step_y = 1
-                                    elif dy < 0: step_y = -1
-                                    if level_map[enemy_y + step_y][enemy_x + step_x] == 0:
-                                        enemy_x += step_x
-                                        enemy_y += step_y
+                                for _ in range(enemy_speed):
+                                    dx = player_x - enemy_x
+                                    dy = player_y - enemy_y
+                                    if abs(dx) + abs(dy) == 1: 
+                                        player_hp -= enemy_atk
+                                        break
+                                    else: 
+                                        step_x, step_y = 0, 0
+                                        if dx > 0: step_x = 1
+                                        elif dx < 0: step_x = -1
+                                        elif dy > 0: step_y = 1
+                                        elif dy < 0: step_y = -1
+                                        if level_map[enemy_y + step_y][enemy_x + step_x] == 0:
+                                            enemy_x += step_x
+                                            enemy_y += step_y
                                         
                 if player_hp <= 0:
                     game_state = "GAME_OVER"
@@ -269,7 +281,7 @@ while running:
             pygame.draw.rect(screen, (200, 0, 255), (portal_x * TILE_SIZE, portal_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             
         if enemy_alive:
-            pygame.draw.rect(screen, (255, 50, 50), (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
             draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
             
