@@ -88,7 +88,9 @@ R - вернуться в главное меню
 Рисую арты на piskelapp.com
 
 
-#ОПИСАНИЕ НА АНГЛИЙСКОМ ЯЗЫКЕ(DESCRIPTION IN ENGLISH)
+
+
+# ОПИСАНИЕ НА АНГЛИЙСКОМ ЯЗЫКЕ(DESCRIPTION IN ENGLISH)
 
 I am a first‑year student at Irnitu, majoring in 09.03.01, group Asub 26‑1. I want to learn how to write my own programs and understand how everything works from the inside. For my first project, I would like to create a game using the Python programming language. I want to make my own game — “Dungeon Run”. My game is a roguelike where the character descends into a dungeon, collects weapons, finds potions that boost their abilities, applies buffs, and fights various bosses.
 
