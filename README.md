@@ -94,19 +94,19 @@ R - вернуться в главное меню
 
 I am a first‑year student at Irnitu, majoring in 09.03.01, group Asub 26‑1. I want to learn how to write my own programs and understand how everything works from the inside. For my first project, I would like to create a game using the Python programming language. I want to make my own game — “Dungeon Run”. My game is a roguelike where the character descends into a dungeon, collects weapons, finds potions that boost their abilities, applies buffs, and fights various bosses.
 
-CHARACTERS AND SKINS:
+# CHARACTERS AND SKINS:
 The game features several characters, each with their own starting stats. Skins can be obtained for various achievements, and weapons can be obtained by completing a specific task.
 
-WEAPONS:
+# WEAPONS:
 There are several types, ranging from melee weapons to ultra‑rare weapons.
 
-POTIONS:
+# POTIONS:
 You can obtain potions for health, teleportation, and invulnerability.
 
-DUNGEONS AND LEVELS:
+# DUNGEONS AND LEVELS:
 Each level has its own bosses, enemies, traps, and chests.
 
-GAME CONTROL:
+# GAME CONTROL:
 wasd - movement
 
 space - attack (use of abilities)
