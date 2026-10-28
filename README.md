@@ -149,7 +149,7 @@ abilities:
 
 Slime — a common enemy, slow
 
-The rat is a fast enemy; it moves 2 cells.
+🐁The rat is a fast enemy; it moves 2 cells.
 
 Boss (mutant slug) — appears every 3 levels. When it takes damage, it gets angry and spills a toxic pool.
 
