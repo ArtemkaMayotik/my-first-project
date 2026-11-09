@@ -73,7 +73,9 @@ blood_splats = []
 particles = []
 spike_traps = []
 turn_counter = 0
+
 intro_alpha = 0
+intro_timer = 0
 
 has_staff = False
 staff_uses = 0
@@ -138,7 +140,7 @@ def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
     global barrels, spike_traps, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
-    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y, turn_counter, intro_alpha
+    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y, turn_counter, intro_alpha, intro_timer
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -154,8 +156,10 @@ def setup_level():
     
     if current_level == 1:
         intro_alpha = 255
+        intro_timer = 60
     else:
         intro_alpha = 0
+        intro_timer = 0
     
     torches = []
     for ty in range(GRID_HEIGHT):
@@ -504,7 +508,7 @@ while running:
                     if (x * 3 + y * 7) % 11 == 0:
                         pygame.draw.line(screen, (20, 20, 25), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
                         
-        if current_level == 1 and intro_alpha < 200:
+        if current_level == 1 and intro_alpha < 100:
             sx, sy = 10, 7
             pygame.draw.rect(screen, (50, 50, 50), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+10), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+10), 3)
@@ -628,18 +632,29 @@ while running:
             radius = max(1, int(p["life"] / 5))
             pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), radius)
 
-        if current_level == 1 and intro_alpha > 0:
-            intro_alpha -= 1
-            if intro_alpha < 0: intro_alpha = 0
-            fog_surface = pygame.Surface((WIDTH, HEIGHT))
-            fog_surface.fill((0, 0, 0))
-            fog_surface.set_alpha(intro_alpha)
-            screen.blit(fog_surface, (0, 0))
+        if current_level == 1 and (intro_alpha > 0 or intro_timer > 0):
+            if intro_timer > 0:
+                intro_timer -= 1
+            else:
+                intro_alpha -= 1.2
+                if intro_alpha < 0: intro_alpha = 0
             
-            if intro_alpha > 100:
-                intro_text_surface = big_font.render("Вы очнулись в подземелье...", True, (255, 255, 255))
-                intro_text_surface.set_alpha(intro_alpha)
-                screen.blit(intro_text_surface, (WIDTH//2 - intro_text_surface.get_width()//2, HEIGHT//2 - 20))
+            if intro_alpha > 0:
+                fog_surface = pygame.Surface((WIDTH, HEIGHT))
+                fog_surface.fill((0, 0, 0))
+                fog_surface.set_alpha(int(intro_alpha))
+                screen.blit(fog_surface, (0, 0))
+                
+                text_alpha = int(intro_alpha)
+                if intro_timer > 0:
+                    text_alpha = 255
+                else:
+                    text_alpha = min(255, int(intro_alpha * 1.5))
+
+                if text_alpha > 0:
+                    intro_text_surface = big_font.render("Вы очнулись в подземелье...", True, (255, 255, 255))
+                    intro_text_surface.set_alpha(text_alpha)
+                    screen.blit(intro_text_surface, (WIDTH//2 - intro_text_surface.get_width()//2, HEIGHT//2 - 20))
         
     elif game_state == "GAME_OVER":
         screen.fill((50, 0, 0))
