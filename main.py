@@ -3,6 +3,13 @@ import sys
 import random
 
 pygame.init()
+pygame.mixer.init()
+
+try:
+    hit_sound = pygame.mixer.Sound("hit.wav")
+except:
+    hit_sound = None
+
 TILE_SIZE = 40
 GRID_WIDTH = 20
 GRID_HEIGHT = 15
@@ -63,10 +70,27 @@ ult_used = False
 toxic_tiles = []
 torches = []
 blood_splats = []
+particles = []
 
 has_staff = False
 staff_uses = 0
 player_stun = 0
+
+def play_hit():
+    if hit_sound:
+        hit_sound.play()
+
+def spawn_particles(px, py, color, count=15):
+    for _ in range(count):
+        particles.append({
+            "x": px * TILE_SIZE + TILE_SIZE // 2,
+            "y": py * TILE_SIZE + TILE_SIZE // 2,
+            "vx": random.uniform(-4, 4),
+            "vy": random.uniform(-4, 4),
+            "life": random.randint(15, 30),
+            "max_life": 30,
+            "color": color
+        })
 
 def draw_hp_bar(surface, x, y, current_hp, max_hp, width=TILE_SIZE):
     bar_height = 6
@@ -220,6 +244,7 @@ while running:
                 has_sword = False 
                 has_staff = False
                 staff_uses = 0
+                particles = []
                 setup_level()
                 game_state = "PLAYING"
 
@@ -265,6 +290,8 @@ while running:
                             enemy_hp -= player_atk
                             
                         enemy_attacked = True
+                        play_hit()
+                        spawn_particles(enemy_x, enemy_y, enemy_color, 5)
                         blood_splats.append([enemy_x, enemy_y])
                         if len(blood_splats) > 30: blood_splats.pop(0)
                         
@@ -272,6 +299,7 @@ while running:
                             boss_hits += 1
                         if enemy_hp <= 0: 
                             enemy_alive = False
+                            spawn_particles(enemy_x, enemy_y, enemy_color, 30)
                             portal_alive = True
                             portal_x, portal_y = enemy_x, enemy_y
                             
@@ -298,6 +326,8 @@ while running:
                                 enemy_hp -= player_atk
                                 
                             enemy_attacked = True
+                            play_hit()
+                            spawn_particles(enemy_x, enemy_y, enemy_color, 5)
                             blood_splats.append([enemy_x, enemy_y])
                             if len(blood_splats) > 30: blood_splats.pop(0)
                             
@@ -305,6 +335,7 @@ while running:
                                 boss_hits += 1
                             if enemy_hp <= 0: 
                                 enemy_alive = False
+                                spawn_particles(enemy_x, enemy_y, enemy_color, 30)
                                 portal_alive = True
                                 portal_x, portal_y = enemy_x, enemy_y
                                 if player_char == "Я сам":
@@ -315,6 +346,7 @@ while running:
                             
                             if [player_x, player_y] in toxic_tiles:
                                 player_hp -= int(player_max_hp * 0.3)
+                                play_hit()
                                 blood_splats.append([player_x, player_y])
                                 if len(blood_splats) > 30: blood_splats.pop(0)
                                 if player_hp < 1: player_hp = 1
@@ -325,6 +357,7 @@ while running:
                             else:
                                 if [player_x, player_y] in spikes:
                                     player_hp -= 15
+                                    play_hit()
                                     blood_splats.append([player_x, player_y])
                                     if len(blood_splats) > 30: blood_splats.pop(0)
                                 
@@ -372,6 +405,8 @@ while running:
                                     dy = player_y - enemy_y
                                     if abs(dx) + abs(dy) == 1: 
                                         player_hp -= enemy_atk
+                                        play_hit()
+                                        spawn_particles(player_x, player_y, player_color, 5)
                                         blood_splats.append([player_x, player_y])
                                         if len(blood_splats) > 30: blood_splats.pop(0)
                                         break
@@ -386,7 +421,15 @@ while running:
                                             enemy_y += step_y
                                         
                 if player_hp <= 0:
+                    spawn_particles(player_x, player_y, player_color, 40)
                     game_state = "GAME_OVER"
+
+        for p in particles[:]:
+            p["x"] += p["vx"]
+            p["y"] += p["vy"]
+            p["life"] -= 1
+            if p["life"] <= 0:
+                particles.remove(p)
 
         screen.fill((20, 20, 20))
         
@@ -534,6 +577,10 @@ while running:
 
         hint = font.render("Space - способность | E - выпить зелье", True, (150, 150, 150))
         screen.blit(hint, (10, HEIGHT - 30))
+
+        for p in particles:
+            radius = max(1, int(p["life"] / 5))
+            pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), radius)
         
     elif game_state == "GAME_OVER":
         screen.fill((50, 0, 0))
@@ -543,10 +590,15 @@ while running:
         restart_text = font.render("Нажмите R, чтобы начать заново", True, (255, 255, 255))
         screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 20))
 
+        for p in particles:
+            radius = max(1, int(p["life"] / 5))
+            pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), radius)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
+                    particles = []
                     game_state = "MENU"
 
     pygame.display.flip()
