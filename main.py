@@ -76,6 +76,9 @@ has_staff = False
 staff_uses = 0
 player_stun = 0
 
+player_vis_x, player_vis_y = 0, 0
+enemy_vis_x, enemy_vis_y = 0, 0
+
 def play_hit():
     if hit_sound:
         hit_sound.play()
@@ -132,9 +135,11 @@ def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
     global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
+    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y
     
     level_map = generate_map()
     player_x, player_y = 10, 7
+    player_vis_x, player_vis_y = player_x, player_y
     level_map[player_y][player_x] = 0
     
     toxic_tiles = []
@@ -172,6 +177,7 @@ def setup_level():
             enemy_color = (160, 82, 45)
 
     enemy_x, enemy_y = 5, 5
+    enemy_vis_x, enemy_vis_y = enemy_x, enemy_y
     level_map[enemy_y][enemy_x] = 0
     enemy_alive = True
     enemy_stunned = 0
@@ -424,6 +430,11 @@ while running:
                     spawn_particles(player_x, player_y, player_color, 40)
                     game_state = "GAME_OVER"
 
+        player_vis_x += (player_x - player_vis_x) * 0.2
+        player_vis_y += (player_y - player_vis_y) * 0.2
+        enemy_vis_x += (enemy_x - enemy_vis_x) * 0.2
+        enemy_vis_y += (enemy_y - enemy_vis_y) * 0.2
+
         for p in particles[:]:
             p["x"] += p["vx"]
             p["y"] += p["vy"]
@@ -517,38 +528,38 @@ while running:
             
         if enemy_alive:
             if is_boss_level:
-                pygame.draw.ellipse(screen, (10, 10, 15), (enemy_x * TILE_SIZE - 15, enemy_y * TILE_SIZE + 25, 70, 20))
+                pygame.draw.ellipse(screen, (10, 10, 15), (enemy_vis_x * TILE_SIZE - 15, enemy_vis_y * TILE_SIZE + 25, 70, 20))
                 if has_boss_img:
-                    screen.blit(boss_img, (enemy_x * TILE_SIZE - TILE_SIZE, enemy_y * TILE_SIZE - TILE_SIZE))
+                    screen.blit(boss_img, (enemy_vis_x * TILE_SIZE - TILE_SIZE, enemy_vis_y * TILE_SIZE - TILE_SIZE))
                 else:
-                    pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE - 20, enemy_y * TILE_SIZE - 20, TILE_SIZE + 40, TILE_SIZE + 40))
-                draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp, width=TILE_SIZE * 3)
+                    pygame.draw.rect(screen, enemy_color, (enemy_vis_x * TILE_SIZE - 20, enemy_vis_y * TILE_SIZE - 20, TILE_SIZE + 40, TILE_SIZE + 40))
+                draw_hp_bar(screen, enemy_vis_x, enemy_vis_y, enemy_hp, enemy_max_hp, width=TILE_SIZE * 3)
             else:
-                pygame.draw.ellipse(screen, (10, 10, 15), (enemy_x * TILE_SIZE + 5, enemy_y * TILE_SIZE + 25, 30, 10))
+                pygame.draw.ellipse(screen, (10, 10, 15), (enemy_vis_x * TILE_SIZE + 5, enemy_vis_y * TILE_SIZE + 25, 30, 10))
                 if enemy_type == "slime" and has_slime_img:
-                    screen.blit(slime_img, (enemy_x * TILE_SIZE - TILE_SIZE // 2, enemy_y * TILE_SIZE - TILE_SIZE // 2))
+                    screen.blit(slime_img, (enemy_vis_x * TILE_SIZE - TILE_SIZE // 2, enemy_vis_y * TILE_SIZE - TILE_SIZE // 2))
                 elif enemy_type == "rat" and has_rat_img:
-                    screen.blit(rat_img, (enemy_x * TILE_SIZE - TILE_SIZE // 2, enemy_y * TILE_SIZE - TILE_SIZE // 2))
+                    screen.blit(rat_img, (enemy_vis_x * TILE_SIZE - TILE_SIZE // 2, enemy_vis_y * TILE_SIZE - TILE_SIZE // 2))
                 else:
-                    pygame.draw.rect(screen, enemy_color, (enemy_x * TILE_SIZE, enemy_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-                    draw_eyes(screen, enemy_x, enemy_y, player_x, player_y)
-                draw_hp_bar(screen, enemy_x, enemy_y, enemy_hp, enemy_max_hp)
+                    pygame.draw.rect(screen, enemy_color, (enemy_vis_x * TILE_SIZE, enemy_vis_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                    draw_eyes(screen, enemy_vis_x, enemy_vis_y, player_vis_x, player_vis_y)
+                draw_hp_bar(screen, enemy_vis_x, enemy_vis_y, enemy_hp, enemy_max_hp)
             
             if enemy_stunned > 0:
-                pygame.draw.circle(screen, (255, 255, 0), (enemy_x * TILE_SIZE + 20, enemy_y * TILE_SIZE - 20), 5)
+                pygame.draw.circle(screen, (255, 255, 0), (enemy_vis_x * TILE_SIZE + 20, enemy_vis_y * TILE_SIZE - 20), 5)
 
-        pygame.draw.ellipse(screen, (10, 10, 15), (player_x * TILE_SIZE + 5, player_y * TILE_SIZE + 25, 30, 10))
+        pygame.draw.ellipse(screen, (10, 10, 15), (player_vis_x * TILE_SIZE + 5, player_vis_y * TILE_SIZE + 25, 30, 10))
         
         if has_player_img:
-            screen.blit(player_img, (player_x * TILE_SIZE - TILE_SIZE // 2, player_y * TILE_SIZE - TILE_SIZE // 2))
+            screen.blit(player_img, (player_vis_x * TILE_SIZE - TILE_SIZE // 2, player_vis_y * TILE_SIZE - TILE_SIZE // 2))
         else:
-            pygame.draw.rect(screen, player_color, (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            draw_eyes(screen, player_x, player_y, enemy_x, enemy_y)
+            pygame.draw.rect(screen, player_color, (player_vis_x * TILE_SIZE, player_vis_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            draw_eyes(screen, player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y)
             
-        draw_hp_bar(screen, player_x, player_y, player_hp, player_max_hp)
+        draw_hp_bar(screen, player_vis_x, player_vis_y, player_hp, player_max_hp)
         
         name_text = name_font.render(player_char, True, (255, 255, 255))
-        screen.blit(name_text, (player_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_y * TILE_SIZE - 30))
+        screen.blit(name_text, (player_vis_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_vis_y * TILE_SIZE - 30))
 
         level_text = font.render(f"Уровень: {current_level}", True, (255, 255, 255))
         screen.blit(level_text, (WIDTH - 150, 10))
