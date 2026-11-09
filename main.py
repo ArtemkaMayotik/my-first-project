@@ -88,10 +88,10 @@ def spawn_particles(px, py, color, count=15):
         particles.append({
             "x": px * TILE_SIZE + TILE_SIZE // 2,
             "y": py * TILE_SIZE + TILE_SIZE // 2,
-            "vx": random.uniform(-4, 4),
-            "vy": random.uniform(-4, 4),
-            "life": random.randint(15, 30),
-            "max_life": 30,
+            "vx": random.uniform(-3, 3),
+            "vy": random.uniform(-5, -1),
+            "life": random.randint(20, 40),
+            "max_life": 40,
             "color": color
         })
 
@@ -413,6 +413,8 @@ while running:
                                         player_hp -= enemy_atk
                                         play_hit()
                                         spawn_particles(player_x, player_y, player_color, 5)
+                                        if ult_used:
+                                            spawn_particles(player_x, player_y, (50, 200, 50), 10)
                                         blood_splats.append([player_x, player_y])
                                         if len(blood_splats) > 30: blood_splats.pop(0)
                                         break
@@ -435,9 +437,22 @@ while running:
         enemy_vis_x += (enemy_x - enemy_vis_x) * 0.2
         enemy_vis_y += (enemy_y - enemy_vis_y) * 0.2
 
+        if is_boss_level and ult_used and enemy_alive:
+            if random.random() < 0.2:
+                particles.append({
+                    "x": enemy_vis_x * TILE_SIZE + TILE_SIZE * 1.5,
+                    "y": enemy_vis_y * TILE_SIZE + TILE_SIZE * 2.5,
+                    "vx": random.uniform(-1.5, 1.5),
+                    "vy": random.uniform(0, 2),
+                    "life": random.randint(20, 40),
+                    "max_life": 40,
+                    "color": (50, 200, 50)
+                })
+
         for p in particles[:]:
             p["x"] += p["vx"]
             p["y"] += p["vy"]
+            p["vy"] += 0.3
             p["life"] -= 1
             if p["life"] <= 0:
                 particles.remove(p)
