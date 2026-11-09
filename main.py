@@ -71,6 +71,8 @@ toxic_tiles = []
 torches = []
 blood_splats = []
 particles = []
+spike_traps = []
+turn_counter = 0
 
 has_staff = False
 staff_uses = 0
@@ -134,8 +136,8 @@ def generate_map():
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
     global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
-    global barrels, spikes, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
-    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y
+    global barrels, spike_traps, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
+    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y, turn_counter
     
     level_map = generate_map()
     player_x, player_y = 10, 7
@@ -147,6 +149,7 @@ def setup_level():
     ult_used = False
     player_stun = 0
     blood_splats = []
+    turn_counter = 0
     
     torches = []
     for ty in range(GRID_HEIGHT):
@@ -200,14 +203,14 @@ def setup_level():
         if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
             barrels.append([bx, by])
             
-    spikes = []
+    spike_traps = []
     for _ in range(10):
         sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
         if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
-            spikes.append([sx, sy])
+            spike_traps.append([sx, sy])
 
     chest_x, chest_y = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-    if level_map[chest_y][chest_x] == 0 and (chest_x, chest_y) != (player_x, player_y) and (chest_x, chest_y) != (enemy_x, enemy_y) and [chest_x, chest_y] not in barrels and [chest_x, chest_y] not in spikes:
+    if level_map[chest_y][chest_x] == 0 and (chest_x, chest_y) != (player_x, player_y) and (chest_x, chest_y) != (enemy_x, enemy_y) and [chest_x, chest_y] not in barrels and [chest_x, chest_y] not in spike_traps:
         chest_alive = True
     else:
         chest_alive = False
@@ -361,12 +364,6 @@ while running:
                                 current_level += 1
                                 setup_level()
                             else:
-                                if [player_x, player_y] in spikes:
-                                    player_hp -= 15
-                                    play_hit()
-                                    blood_splats.append([player_x, player_y])
-                                    if len(blood_splats) > 30: blood_splats.pop(0)
-                                
                                 if potion_alive and player_x == potion_x and player_y == potion_y:
                                     inventory_potions += 1
                                     potion_alive = False
@@ -399,6 +396,16 @@ while running:
                                 toxic_tiles.append([tx, ty])
                                 
                 if player_moved or enemy_attacked:
+                    turn_counter += 1
+                    spikes_up = (turn_counter % 3 == 0)
+                    
+                    if [player_x, player_y] in spike_traps and spikes_up:
+                        player_hp -= 15
+                        play_hit()
+                        spawn_particles(player_x, player_y, (200, 200, 200), 10)
+                        blood_splats.append([player_x, player_y])
+                        if len(blood_splats) > 30: blood_splats.pop(0)
+                    
                     if player_speed_boost > 0:
                         player_speed_boost -= 1 
                     else:
@@ -431,6 +438,8 @@ while running:
                 if player_hp <= 0:
                     spawn_particles(player_x, player_y, player_color, 40)
                     game_state = "GAME_OVER"
+
+        spikes_up = (turn_counter % 3 == 0) and turn_counter > 0
 
         player_vis_x += (player_x - player_vis_x) * 0.2
         player_vis_y += (player_y - player_vis_y) * 0.2
@@ -513,15 +522,20 @@ while running:
             pygame.draw.circle(screen, (100, 255, 100), (tx * TILE_SIZE + 30, ty * TILE_SIZE + 25), 5)
             pygame.draw.circle(screen, (100, 255, 100), (tx * TILE_SIZE + 15, ty * TILE_SIZE + 35), 3)
 
-        for sx, sy in spikes:
-            pygame.draw.rect(screen, (60, 60, 60), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
-            pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
-
-        for bx, by in barrels:
-            pygame.draw.ellipse(screen, (10, 10, 15), (bx * TILE_SIZE + 5, by * TILE_SIZE + 25, 30, 10))
-            pygame.draw.rect(screen, (139, 69, 19), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            pygame.draw.rect(screen, (80, 40, 10), (bx * TILE_SIZE, by * TILE_SIZE, TILE_SIZE, TILE_SIZE), 2)
+        for sx, sy in spike_traps:
+            pygame.draw.rect(screen, (50, 50, 50), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            if spikes_up:
+                pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
+                pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
+                pygame.draw.polygon(screen, (150, 0, 0), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
+                pygame.draw.polygon(screen, (150, 0, 0), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
+            else:
+                pygame.draw.rect(screen, (30, 30, 30), (sx*TILE_SIZE+5, sy*TILE_SIZE+5, 30, 30))
+                pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+10, sy*TILE_SIZE+10), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+20, sy*TILE_SIZE+15), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+30, sy*TILE_SIZE+10), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+15, sy*TILE_SIZE+25), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+25, sy*TILE_SIZE+30), 3)
 
         if chest_alive:
             pygame.draw.ellipse(screen, (10, 10, 15), (chest_x * TILE_SIZE + 5, chest_y * TILE_SIZE + 25, 30, 10))
