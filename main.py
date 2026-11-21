@@ -24,6 +24,63 @@ big_font = pygame.font.SysFont("Arial", 40)
 title_font = pygame.font.SysFont("Arial", 60, bold=True)
 name_font = pygame.font.SysFont("Arial", 14, bold=True)
 
+current_lang = "ru"
+
+texts = {
+    "ru": {
+        "title": "DUNGEON RUN",
+        "menu_start": "1 - Начать игру",
+        "menu_exit": "2 - Выход",
+        "menu_lang": "L - Сменить язык (RU/EN)",
+        "char_title": "Выбери своего героя",
+        "char_1": "1 - Паук (Space: Паутина)",
+        "char_2": "2 - Гарри (Space: Оглушение)",
+        "char_3": "3 - Ты сам (Лечение за убийство)",
+        "char_back": "Esc - Вернуться в меню",
+        "paused": "ПАУЗА",
+        "pause_resume": "1 - Продолжить",
+        "pause_menu": "2 - Выйти в главное меню",
+        "game_over": "ВЫ ПОГИБЛИ",
+        "game_over_r": "Нажмите R, чтобы начать заново",
+        "game_over_esc": "Нажмите Esc, чтобы выйти в меню",
+        "intro": "Вы очнулись в подземелье...",
+        "lvl": "Уровень:",
+        "dmg": "Урон:",
+        "potions": "Зелья (E):",
+        "sword": "В руках: Меч (+25)",
+        "staff": "Сломанный посох воина (удары: {})",
+        "slow": "ЗАМЕДЛЕНИЕ (ход пропущен)",
+        "boss_enraged": "БОСС В ЯРОСТИ! БЕРЕГИСЬ ЯДА!",
+        "hint": "Space - способность | E - зелье | Esc - пауза"
+    },
+    "en": {
+        "title": "DUNGEON RUN",
+        "menu_start": "1 - Start Game",
+        "menu_exit": "2 - Exit",
+        "menu_lang": "L - Change Language (RU/EN)",
+        "char_title": "Choose your hero",
+        "char_1": "1 - Spider (Space: Web)",
+        "char_2": "2 - Harry (Space: Stun)",
+        "char_3": "3 - Yourself (Heal on kill)",
+        "char_back": "Esc - Back to menu",
+        "paused": "PAUSED",
+        "pause_resume": "1 - Resume",
+        "pause_menu": "2 - Main Menu",
+        "game_over": "YOU DIED",
+        "game_over_r": "Press R to restart",
+        "game_over_esc": "Press Esc to return to menu",
+        "intro": "You woke up in the dungeon...",
+        "lvl": "Level:",
+        "dmg": "Damage:",
+        "potions": "Potions (E):",
+        "sword": "Equipped: Sword (+25)",
+        "staff": "Broken Warrior's Staff (hits: {})",
+        "slow": "SLOWED (turn skipped)",
+        "boss_enraged": "BOSS ENRAGED! BEWARE POISON!",
+        "hint": "Space - ability | E - potion | Esc - pause"
+    }
+}
+
 try:
     player_img = pygame.image.load("player.png").convert_alpha()
     player_img = pygame.transform.scale(player_img, (TILE_SIZE * 2, TILE_SIZE * 2))
@@ -233,14 +290,16 @@ while running:
     if game_state == "MAIN_MENU":
         screen.fill((15, 15, 20))
         
-        title = title_font.render("DUNGEON RUN", True, (200, 0, 0))
+        title = title_font.render(texts[current_lang]["title"], True, (200, 0, 0))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 150))
         
-        text1 = font.render("1 - Начать игру", True, (255, 255, 255))
-        text2 = font.render("2 - Выход", True, (255, 255, 255))
+        text1 = font.render(texts[current_lang]["menu_start"], True, (255, 255, 255))
+        text2 = font.render(texts[current_lang]["menu_exit"], True, (255, 255, 255))
+        text_lang = font.render(texts[current_lang]["menu_lang"], True, (150, 150, 150))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 300))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 350))
+        screen.blit(text_lang, (WIDTH//2 - text_lang.get_width()//2, 450))
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
@@ -249,16 +308,18 @@ while running:
                     game_state = "CHAR_SELECT"
                 elif event.key == pygame.K_2:
                     running = False
+                elif event.key == pygame.K_l:
+                    current_lang = "en" if current_lang == "ru" else "ru"
 
     elif game_state == "CHAR_SELECT":
         screen.fill((20, 20, 20))
-        title = big_font.render("Выбери своего героя", True, (255, 255, 255))
+        title = big_font.render(texts[current_lang]["char_title"], True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
         
-        text1 = font.render("1 - Паук (Space: Паутина)", True, (200, 0, 0))
-        text2 = font.render("2 - Гарри (Space: Оглушение)", True, (150, 50, 255))
-        text3 = font.render("3 - Ты сам (Лечение за убийство)", True, (0, 255, 0))
-        text4 = font.render("Esc - Вернуться в меню", True, (150, 150, 150))
+        text1 = font.render(texts[current_lang]["char_1"], True, (200, 0, 0))
+        text2 = font.render(texts[current_lang]["char_2"], True, (150, 50, 255))
+        text3 = font.render(texts[current_lang]["char_3"], True, (0, 255, 0))
+        text4 = font.render(texts[current_lang]["char_back"], True, (150, 150, 150))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 250))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 300))
@@ -270,6 +331,8 @@ while running:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     game_state = "MAIN_MENU"
+                elif event.key == pygame.K_l:
+                    current_lang = "en" if current_lang == "ru" else "ru"
                 elif event.key == pygame.K_1:
                     player_char, player_color = "Паук", (200, 0, 0)
                     player_hp, player_max_hp, player_atk = 50, 50, 20
@@ -626,17 +689,17 @@ while running:
         name_text = name_font.render(player_char, True, (255, 255, 255))
         screen.blit(name_text, (player_vis_x * TILE_SIZE + TILE_SIZE//2 - name_text.get_width()//2, player_vis_y * TILE_SIZE - 30))
 
-        level_text = font.render(f"Уровень: {current_level}", True, (255, 255, 255))
+        level_text = font.render(f"{texts[current_lang]['lvl']} {current_level}", True, (255, 255, 255))
         screen.blit(level_text, (WIDTH - 150, 10))
 
-        info_text = font.render(f"Урон: {player_atk} | Зелья (E): {inventory_potions}", True, (255, 255, 255))
+        info_text = font.render(f"{texts[current_lang]['dmg']} {player_atk} | {texts[current_lang]['potions']} {inventory_potions}", True, (255, 255, 255))
         screen.blit(info_text, (10, 10))
         
         if has_staff:
-            staff_text = font.render(f"Сломанный посох воина (удары: {staff_uses})", True, (255, 165, 0))
+            staff_text = font.render(texts[current_lang]['staff'].format(staff_uses), True, (255, 165, 0))
             screen.blit(staff_text, (10, 35))
         elif has_sword:
-            sword_text = font.render("В руках: Меч (+25)", True, (220, 220, 220))
+            sword_text = font.render(texts[current_lang]['sword'], True, (220, 220, 220))
             screen.blit(sword_text, (10, 35))
 
         if player_speed_boost > 0:
@@ -644,14 +707,14 @@ while running:
             screen.blit(speed_text, (10, 60))
 
         if player_stun > 0:
-            stun_text = font.render("ЗАМЕДЛЕНИЕ (ход пропущен)", True, (255, 0, 0))
+            stun_text = font.render(texts[current_lang]['slow'], True, (255, 0, 0))
             screen.blit(stun_text, (10, 85))
             
         if is_boss_level and ult_used:
-            boss_text = font.render("БОСС В ЯРОСТИ! БЕРЕГИСЬ ЯДА!", True, (255, 50, 50))
+            boss_text = font.render(texts[current_lang]['boss_enraged'], True, (255, 50, 50))
             screen.blit(boss_text, (WIDTH//2 - boss_text.get_width()//2, HEIGHT - 60))
 
-        hint = font.render("Space - способность | E - зелье | Esc - пауза", True, (150, 150, 150))
+        hint = font.render(texts[current_lang]['hint'], True, (150, 150, 150))
         screen.blit(hint, (10, HEIGHT - 30))
 
         for p in particles:
@@ -678,7 +741,7 @@ while running:
                     text_alpha = min(255, int(intro_alpha * 1.5))
 
                 if text_alpha > 0:
-                    intro_text_surface = big_font.render("Вы очнулись в подземелье...", True, (255, 255, 255))
+                    intro_text_surface = big_font.render(texts[current_lang]['intro'], True, (255, 255, 255))
                     intro_text_surface.set_alpha(text_alpha)
                     screen.blit(intro_text_surface, (WIDTH//2 - intro_text_surface.get_width()//2, HEIGHT//2 - 20))
 
@@ -688,11 +751,11 @@ while running:
         pause_surface.fill((0, 0, 0))
         screen.blit(pause_surface, (0, 0))
         
-        title = big_font.render("ПАУЗА", True, (255, 255, 255))
+        title = big_font.render(texts[current_lang]['paused'], True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 200))
         
-        text1 = font.render("1 - Продолжить", True, (255, 255, 255))
-        text2 = font.render("2 - Выйти в главное меню", True, (255, 255, 255))
+        text1 = font.render(texts[current_lang]['pause_resume'], True, (255, 255, 255))
+        text2 = font.render(texts[current_lang]['pause_menu'], True, (255, 255, 255))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 300))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 350))
@@ -707,13 +770,13 @@ while running:
         
     elif game_state == "GAME_OVER":
         screen.fill((50, 0, 0))
-        go_text = big_font.render("ВЫ ПОГИБЛИ", True, (255, 0, 0))
+        go_text = big_font.render(texts[current_lang]['game_over'], True, (255, 0, 0))
         screen.blit(go_text, (WIDTH//2 - go_text.get_width()//2, HEIGHT//2 - 50))
         
-        restart_text = font.render("Нажмите R, чтобы начать заново", True, (255, 255, 255))
+        restart_text = font.render(texts[current_lang]['game_over_r'], True, (255, 255, 255))
         screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 20))
         
-        menu_text = font.render("Нажмите Esc, чтобы выйти в меню", True, (150, 150, 150))
+        menu_text = font.render(texts[current_lang]['game_over_esc'], True, (150, 150, 150))
         screen.blit(menu_text, (WIDTH//2 - menu_text.get_width()//2, HEIGHT//2 + 50))
 
         for p in particles:
