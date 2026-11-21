@@ -21,6 +21,7 @@ pygame.display.set_caption("Dungeon Run")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 20)
 big_font = pygame.font.SysFont("Arial", 40)
+title_font = pygame.font.SysFont("Arial", 60, bold=True)
 name_font = pygame.font.SysFont("Arial", 14, bold=True)
 
 try:
@@ -58,7 +59,7 @@ try:
 except:
     has_weapon_img = False
 
-game_state = "MENU"
+game_state = "MAIN_MENU"
 player_char = ""
 player_color = (0, 255, 0)
 portal_alive = False
@@ -229,7 +230,27 @@ def setup_level():
 
 running = True
 while running:
-    if game_state == "MENU":
+    if game_state == "MAIN_MENU":
+        screen.fill((15, 15, 20))
+        
+        title = title_font.render("DUNGEON RUN", True, (200, 0, 0))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 150))
+        
+        text1 = font.render("1 - Начать игру", True, (255, 255, 255))
+        text2 = font.render("2 - Выход", True, (255, 255, 255))
+        
+        screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 300))
+        screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 350))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    game_state = "CHAR_SELECT"
+                elif event.key == pygame.K_2:
+                    running = False
+
+    elif game_state == "CHAR_SELECT":
         screen.fill((20, 20, 20))
         title = big_font.render("Выбери своего героя", True, (255, 255, 255))
         screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
@@ -237,15 +258,19 @@ while running:
         text1 = font.render("1 - Паук (Space: Паутина)", True, (200, 0, 0))
         text2 = font.render("2 - Гарри (Space: Оглушение)", True, (150, 50, 255))
         text3 = font.render("3 - Ты сам (Лечение за убийство)", True, (0, 255, 0))
+        text4 = font.render("Esc - Вернуться в меню", True, (150, 150, 150))
         
         screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 250))
         screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 300))
         screen.blit(text3, (WIDTH//2 - text3.get_width()//2, 350))
+        screen.blit(text4, (WIDTH//2 - text4.get_width()//2, 450))
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
+                if event.key == pygame.K_ESCAPE:
+                    game_state = "MAIN_MENU"
+                elif event.key == pygame.K_1:
                     player_char, player_color = "Паук", (200, 0, 0)
                     player_hp, player_max_hp, player_atk = 50, 50, 20
                 elif event.key == pygame.K_2:
@@ -286,7 +311,8 @@ while running:
                         elif event.key == pygame.K_a: new_x -= 1; player_moved = True
                         elif event.key == pygame.K_d: new_x += 1; player_moved = True
                         
-                elif event.key == pygame.K_ESCAPE: running = False
+                elif event.key == pygame.K_ESCAPE: 
+                    game_state = "PAUSED"
                 
                 elif event.key == pygame.K_e:
                     if inventory_potions > 0 and player_hp < player_max_hp:
@@ -625,7 +651,7 @@ while running:
             boss_text = font.render("БОСС В ЯРОСТИ! БЕРЕГИСЬ ЯДА!", True, (255, 50, 50))
             screen.blit(boss_text, (WIDTH//2 - boss_text.get_width()//2, HEIGHT - 60))
 
-        hint = font.render("Space - способность | E - выпить зелье", True, (150, 150, 150))
+        hint = font.render("Space - способность | E - зелье | Esc - пауза", True, (150, 150, 150))
         screen.blit(hint, (10, HEIGHT - 30))
 
         for p in particles:
@@ -655,6 +681,29 @@ while running:
                     intro_text_surface = big_font.render("Вы очнулись в подземелье...", True, (255, 255, 255))
                     intro_text_surface.set_alpha(text_alpha)
                     screen.blit(intro_text_surface, (WIDTH//2 - intro_text_surface.get_width()//2, HEIGHT//2 - 20))
+
+    elif game_state == "PAUSED":
+        pause_surface = pygame.Surface((WIDTH, HEIGHT))
+        pause_surface.set_alpha(180)
+        pause_surface.fill((0, 0, 0))
+        screen.blit(pause_surface, (0, 0))
+        
+        title = big_font.render("ПАУЗА", True, (255, 255, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 200))
+        
+        text1 = font.render("1 - Продолжить", True, (255, 255, 255))
+        text2 = font.render("2 - Выйти в главное меню", True, (255, 255, 255))
+        
+        screen.blit(text1, (WIDTH//2 - text1.get_width()//2, 300))
+        screen.blit(text2, (WIDTH//2 - text2.get_width()//2, 350))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1 or event.key == pygame.K_ESCAPE:
+                    game_state = "PLAYING"
+                elif event.key == pygame.K_2:
+                    game_state = "MAIN_MENU"
         
     elif game_state == "GAME_OVER":
         screen.fill((50, 0, 0))
@@ -663,6 +712,9 @@ while running:
         
         restart_text = font.render("Нажмите R, чтобы начать заново", True, (255, 255, 255))
         screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT//2 + 20))
+        
+        menu_text = font.render("Нажмите Esc, чтобы выйти в меню", True, (150, 150, 150))
+        screen.blit(menu_text, (WIDTH//2 - menu_text.get_width()//2, HEIGHT//2 + 50))
 
         for p in particles:
             radius = max(1, int(p["life"] / 5))
@@ -673,7 +725,10 @@ while running:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     particles = []
-                    game_state = "MENU"
+                    game_state = "CHAR_SELECT"
+                elif event.key == pygame.K_ESCAPE:
+                    particles = []
+                    game_state = "MAIN_MENU"
 
     pygame.display.flip()
     clock.tick(60)
