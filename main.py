@@ -27,6 +27,7 @@ card_font = pygame.font.SysFont("Arial", 18, bold=True)
 stat_font = pygame.font.SysFont("Arial", 16)
 
 current_lang = "ru"
+current_biome = "dungeon"
 
 texts = {
     "ru": {
@@ -36,10 +37,14 @@ texts = {
         "paused": "ПАУЗА", "pause_resume": "1 - Продолжить", "pause_menu": "2 - Выйти в главное меню",
         "game_over": "ВЫ ПОГИБЛИ", "game_over_r": "Нажмите R, чтобы начать заново",
         "game_over_esc": "Нажмите Esc, чтобы выйти в меню", "intro": "Вы очнулись в подземелье...",
+        "intro_hell": "Вы спустились в огненные глубины...",
+        "win": "ВЫ ПОБЕДИЛИ!", "win_text": "Вы прошли все 5 уровней и спаслись!",
+        "win_esc": "Нажмите Esc, чтобы выйти в меню",
         "lvl": "Уровень:", "dmg": "Урон:", "potions": "Зелья (E):", "hp": "HP:",
         "sword": "В руках: Меч (+25)", "staff": "Сломанный посох воина (удары: {})",
+        "bow": "В руках: Лук (Стрельба на Space)", "axe": "В руках: Тяжелый топор (+40)",
         "slow": "ЗАМЕДЛЕНИЕ (ход пропущен)", "boss_enraged": "БОСС В ЯРОСТИ! БЕРЕГИСЬ ЯДА!",
-        "hint": "Space - способность | E - зелье | Esc - пауза",
+        "hint": "Space - способность/стрельба | E - зелье | Esc - пауза",
         "spider_name": "Паук", "harry_name": "Гарри", "me_name": "Я сам",
         "spider_ability": "Паутина", "harry_ability": "Оглушение", "me_ability": "Лечение"
     },
@@ -50,10 +55,14 @@ texts = {
         "paused": "PAUSED", "pause_resume": "1 - Resume", "pause_menu": "2 - Main Menu",
         "game_over": "YOU DIED", "game_over_r": "Press R to restart",
         "game_over_esc": "Press Esc to return to menu", "intro": "You woke up in the dungeon...",
+        "intro_hell": "You descended into the fiery depths...",
+        "win": "YOU WIN!", "win_text": "You cleared all 5 levels and escaped!",
+        "win_esc": "Press Esc to return to menu",
         "lvl": "Level:", "dmg": "Damage:", "potions": "Potions (E):", "hp": "HP:",
         "sword": "Equipped: Sword (+25)", "staff": "Broken Warrior's Staff (hits: {})",
+        "bow": "Equipped: Bow (Shoot on Space)", "axe": "Equipped: Heavy Axe (+40)",
         "slow": "SLOWED (turn skipped)", "boss_enraged": "BOSS ENRAGED! BEWARE POISON!",
-        "hint": "Space - ability | E - potion | Esc - pause",
+        "hint": "Space - ability/shoot | E - potion | Esc - pause",
         "spider_name": "Spider", "harry_name": "Harry", "me_name": "Myself",
         "spider_ability": "Web", "harry_ability": "Stun", "me_ability": "Heal"
     }
@@ -108,6 +117,20 @@ try:
 except:
     has_weapon_img = False
 
+try:
+    bow_img = pygame.image.load("bow.png").convert_alpha()
+    bow_img = pygame.transform.scale(bow_img, (TILE_SIZE * 2, TILE_SIZE * 2))
+    has_bow_img = True
+except:
+    has_bow_img = False
+
+try:
+    axe_img = pygame.image.load("axe.png").convert_alpha()
+    axe_img = pygame.transform.scale(axe_img, (TILE_SIZE * 2, TILE_SIZE * 2))
+    has_axe_img = True
+except:
+    has_axe_img = False
+
 game_state = "MAIN_MENU"
 player_char = ""
 player_color = (0, 255, 0)
@@ -119,15 +142,16 @@ is_boss_level = False
 boss_hits = 0
 ult_used = False
 toxic_tiles = []
+lava_tiles = []
 torches = []
 blood_splats = []
 particles = []
 spike_traps = []
 turn_counter = 0
-
 intro_alpha = 0
 intro_timer = 0
 
+base_atk = 0
 has_staff = False
 staff_uses = 0
 player_stun = 0
@@ -188,18 +212,20 @@ def generate_map():
 
 def setup_level():
     global level_map, player_x, player_y, enemy_x, enemy_y, enemy_hp, enemy_max_hp, enemy_alive, enemy_stunned, enemy_atk, enemy_speed, enemy_color, enemy_type
-    global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive
+    global potion_x, potion_y, potion_alive, buff_x, buff_y, buff_alive, sword_x, sword_y, sword_alive, bow_x, bow_y, bow_alive, axe_x, axe_y, axe_alive
     global barrels, spike_traps, portal_alive, chest_x, chest_y, chest_alive, is_boss_level, boss_hits, ult_used, toxic_tiles, player_stun, torches, blood_splats
-    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y, turn_counter, intro_alpha, intro_timer
+    global player_vis_x, player_vis_y, enemy_vis_x, enemy_vis_y, turn_counter, intro_alpha, intro_timer, current_biome, lava_tiles
     
     level_map = generate_map()
     player_x, player_y = 10, 7
     player_vis_x, player_vis_y = player_x, player_y
     level_map[player_y][player_x] = 0
     
-    toxic_tiles, boss_hits, ult_used, player_stun, blood_splats, turn_counter = [], 0, False, 0, [], 0
+    toxic_tiles, boss_hits, ult_used, player_stun, blood_splats, turn_counter, lava_tiles = [], 0, False, 0, [], 0, []
     
-    if current_level == 1:
+    current_biome = "hell" if current_level >= 4 else "dungeon"
+    
+    if current_level == 1 or current_level == 4:
         intro_alpha, intro_timer = 255, 60
     else:
         intro_alpha, intro_timer = 0, 0
@@ -210,6 +236,12 @@ def setup_level():
             if level_map[ty][tx] == 1 and 0 < tx < GRID_WIDTH-1 and 0 < ty < GRID_HEIGHT-1:
                 if random.random() < 0.1:
                     torches.append([tx, ty])
+                    
+    if current_biome == "hell":
+        for _ in range(15):
+            lx, ly = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
+            if level_map[ly][lx] == 0 and (lx, ly) != (player_x, player_y) and (lx, ly) != (enemy_x, enemy_y):
+                lava_tiles.append([lx, ly])
     
     if current_level % 3 == 0:
         is_boss_level = True
@@ -242,21 +274,29 @@ def setup_level():
     sword_x, sword_y = 16, 3
     sword_alive = True
     level_map[sword_y][sword_x] = 0
+
+    bow_x, bow_y = 2, 4
+    bow_alive = True
+    level_map[bow_y][bow_x] = 0
+
+    axe_x, axe_y = 17, 12
+    axe_alive = True
+    level_map[axe_y][axe_x] = 0
     
     barrels = []
-    for _ in range(10):
+    for _ in range(8):
         bx, by = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-        if level_map[by][bx] == 0 and (bx, by) != (player_x, player_y) and (bx, by) != (enemy_x, enemy_y):
+        if level_map[by][bx] == 0 and (bx, by) not in [(player_x, player_y), (enemy_x, enemy_y), (bow_x, bow_y), (axe_x, axe_y)] and [bx, by] not in lava_tiles:
             barrels.append([bx, by])
             
     spike_traps = []
     for _ in range(10):
         sx, sy = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-        if level_map[sy][sx] == 0 and (sx, sy) != (player_x, player_y) and (sx, sy) != (enemy_x, enemy_y) and [sx, sy] not in barrels:
+        if level_map[sy][sx] == 0 and (sx, sy) not in [(player_x, player_y), (enemy_x, enemy_y)] and [sx, sy] not in barrels and [sx, sy] not in lava_tiles:
             spike_traps.append([sx, sy])
 
     chest_x, chest_y = random.randint(1, GRID_WIDTH-2), random.randint(1, GRID_HEIGHT-2)
-    if level_map[chest_y][chest_x] == 0 and (chest_x, chest_y) != (player_x, player_y) and (chest_x, chest_y) != (enemy_x, enemy_y) and [chest_x, chest_y] not in barrels and [chest_x, chest_y] not in spike_traps:
+    if level_map[chest_y][chest_x] == 0 and (chest_x, chest_y) not in [(player_x, player_y), (enemy_x, enemy_y), (bow_x, bow_y), (axe_x, axe_y)] and [chest_x, chest_y] not in barrels and [chest_x, chest_y] not in spike_traps and [chest_x, chest_y] not in lava_tiles:
         chest_alive = True
     else:
         chest_alive = False
@@ -303,7 +343,6 @@ while running:
 
         for i, card in enumerate(cards):
             cx = start_x + i * (card_w + gap)
-            
             pygame.draw.rect(screen, (30, 30, 35), (cx, card_y, card_w, card_h))
             pygame.draw.rect(screen, card["color"], (cx, card_y, card_w, card_h), 4)
             
@@ -315,16 +354,12 @@ while running:
                 
             name_surf = card_font.render(card["name"], True, (255, 255, 255))
             screen.blit(name_surf, (cx + card_w//2 - name_surf.get_width()//2, card_y + 150))
-            
             hp_surf = stat_font.render(f"HP: {card['hp']}", True, (0, 255, 0))
             screen.blit(hp_surf, (cx + 20, card_y + 190))
-            
             dmg_surf = stat_font.render(f"DMG: {card['dmg']}", True, (255, 100, 100))
             screen.blit(dmg_surf, (cx + 20, card_y + 215))
-            
             ab_surf = stat_font.render(card["ability"], True, (150, 150, 255))
             screen.blit(ab_surf, (cx + 20, card_y + 240))
-            
             key_surf = big_font.render(str(card["id"]), True, (200, 200, 200))
             screen.blit(key_surf, (cx + card_w//2 - key_surf.get_width()//2, card_y + 260))
 
@@ -340,33 +375,35 @@ while running:
                 elif event.key == pygame.K_l: current_lang = "en" if current_lang == "ru" else "ru"
                 elif event.key == pygame.K_1:
                     player_char, player_color = texts[current_lang]["spider_name"], (200, 0, 0)
-                    player_hp, player_max_hp, player_atk = 50, 50, 20
+                    player_hp, player_max_hp, base_atk = 50, 50, 20
                     current_player_img = player_img if has_player_img else None
-                    game_state = "PLAYING"
-                    current_level, inventory_potions, player_speed_boost = 1, 0, 0
-                    has_sword, has_staff, staff_uses = False, False, 0
+                    game_state, current_level, inventory_potions, player_speed_boost = "PLAYING", 1, 0, 0
+                    has_sword, has_staff, staff_uses, has_bow, has_axe = False, False, 0, False, False
                     particles = []
                     setup_level()
                 elif event.key == pygame.K_2:
                     player_char, player_color = texts[current_lang]["harry_name"], (150, 50, 255)
-                    player_hp, player_max_hp, player_atk = 70, 70, 30
+                    player_hp, player_max_hp, base_atk = 70, 70, 30
                     current_player_img = harry_img if has_harry_img else None
-                    game_state = "PLAYING"
-                    current_level, inventory_potions, player_speed_boost = 1, 0, 0
-                    has_sword, has_staff, staff_uses = False, False, 0
+                    game_state, current_level, inventory_potions, player_speed_boost = "PLAYING", 1, 0, 0
+                    has_sword, has_staff, staff_uses, has_bow, has_axe = False, False, 0, False, False
                     particles = []
                     setup_level()
                 elif event.key == pygame.K_3:
                     player_char, player_color = texts[current_lang]["me_name"], (0, 255, 0)
-                    player_hp, player_max_hp, player_atk = 120, 120, 15
+                    player_hp, player_max_hp, base_atk = 120, 120, 15
                     current_player_img = myself_img if has_myself_img else None
-                    game_state = "PLAYING"
-                    current_level, inventory_potions, player_speed_boost = 1, 0, 0
-                    has_sword, has_staff, staff_uses = False, False, 0
+                    game_state, current_level, inventory_potions, player_speed_boost = "PLAYING", 1, 0, 0
+                    has_sword, has_staff, staff_uses, has_bow, has_axe = False, False, 0, False, False
                     particles = []
                     setup_level()
 
     elif game_state == "PLAYING":
+        player_atk = base_atk
+        if has_sword: player_atk += 25
+        if has_axe: player_atk += 40
+        if has_bow: player_atk += 10
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             if event.type == pygame.KEYDOWN:
@@ -393,7 +430,19 @@ while running:
                 
                 elif event.key == pygame.K_SPACE and enemy_alive:
                     dist = abs(player_x - enemy_x) + abs(player_y - enemy_y)
-                    if player_char == texts[current_lang]["spider_name"] and dist == 2:
+                    
+                    if has_bow and dist <= 4:
+                        enemy_hp -= player_atk
+                        enemy_attacked = True
+                        play_hit()
+                        spawn_particles(enemy_x, enemy_y, (255, 200, 0), 5)
+                        blood_splats.append([enemy_x, enemy_y])
+                        if is_boss_level and enemy_hp > 0: boss_hits += 1
+                        if enemy_hp <= 0: 
+                            enemy_alive = False
+                            spawn_particles(enemy_x, enemy_y, enemy_color, 30)
+                            portal_alive, portal_x, portal_y = True, enemy_x, enemy_y
+                    elif player_char == texts[current_lang]["spider_name"] and dist == 2:
                         if has_staff and staff_uses > 0:
                             enemy_hp -= enemy_max_hp // 2
                             staff_uses -= 1
@@ -404,7 +453,6 @@ while running:
                         play_hit()
                         spawn_particles(enemy_x, enemy_y, enemy_color, 5)
                         blood_splats.append([enemy_x, enemy_y])
-                        if len(blood_splats) > 30: blood_splats.pop(0)
                         if is_boss_level and enemy_hp > 0: boss_hits += 1
                         if enemy_hp <= 0: 
                             enemy_alive = False
@@ -431,7 +479,6 @@ while running:
                             play_hit()
                             spawn_particles(enemy_x, enemy_y, enemy_color, 5)
                             blood_splats.append([enemy_x, enemy_y])
-                            if len(blood_splats) > 30: blood_splats.pop(0)
                             if is_boss_level and enemy_hp > 0: boss_hits += 1
                             if enemy_hp <= 0: 
                                 enemy_alive = False
@@ -444,21 +491,37 @@ while running:
                                 player_hp -= int(player_max_hp * 0.3)
                                 play_hit()
                                 blood_splats.append([player_x, player_y])
-                                if len(blood_splats) > 30: blood_splats.pop(0)
+                                if player_hp < 1: player_hp = 1
+                            if [player_x, player_y] in lava_tiles:
+                                player_hp -= 20
+                                play_hit()
+                                spawn_particles(player_x, player_y, (255, 100, 0), 15)
                                 if player_hp < 1: player_hp = 1
                             
                             if portal_alive and player_x == portal_x and player_y == portal_y:
                                 current_level += 1
-                                setup_level()
+                                if current_level > 5:
+                                    game_state = "GAME_WIN"
+                                else:
+                                    setup_level()
                             else:
                                 if potion_alive and player_x == potion_x and player_y == potion_y:
                                     inventory_potions += 1; potion_alive = False
                                 if buff_alive and player_x == buff_x and player_y == buff_y:
                                     player_speed_boost = 3; buff_alive = False
                                 if sword_alive and player_x == sword_x and player_y == sword_y:
-                                    has_sword = True; player_atk += 25; sword_alive = False
+                                    has_sword, has_bow, has_axe = True, False, False
+                                    sword_alive = False
+                                if bow_alive and player_x == bow_x and player_y == bow_y:
+                                    has_bow, has_sword, has_axe = True, False, False
+                                    bow_alive = False
+                                if axe_alive and player_x == axe_x and player_y == axe_y:
+                                    has_axe, has_sword, has_bow = True, False, False
+                                    axe_alive = False
                                 if chest_alive and player_x == chest_x and player_y == chest_y:
-                                    if is_boss_level: has_staff, staff_uses = True, 2
+                                    if is_boss_level: 
+                                        has_staff, staff_uses = True, 2
+                                        has_sword, has_bow, has_axe = False, False, False
                                     else: player_max_hp += 20; player_hp += 20
                                     chest_alive = False
                             
@@ -477,7 +540,6 @@ while running:
                         play_hit()
                         spawn_particles(player_x, player_y, (200, 200, 200), 10)
                         blood_splats.append([player_x, player_y])
-                        if len(blood_splats) > 30: blood_splats.pop(0)
                     
                     if player_speed_boost > 0: player_speed_boost -= 1 
                     else:
@@ -492,7 +554,6 @@ while running:
                                         spawn_particles(player_x, player_y, player_color, 5)
                                         if ult_used: spawn_particles(player_x, player_y, (50, 200, 50), 10)
                                         blood_splats.append([player_x, player_y])
-                                        if len(blood_splats) > 30: blood_splats.pop(0)
                                         break
                                     else: 
                                         step_x, step_y = 0, 0
@@ -524,14 +585,21 @@ while running:
             p["x"] += p["vx"]; p["y"] += p["vy"]; p["vy"] += 0.3; p["life"] -= 1
             if p["life"] <= 0: particles.remove(p)
 
-        screen.fill((20, 20, 20))
+        if current_biome == "hell":
+            screen.fill((30, 10, 10))
+        else:
+            screen.fill((20, 20, 20))
         
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
                 pixel_x, pixel_y = x * TILE_SIZE, y * TILE_SIZE
                 if level_map[y][x] == 1:
-                    shade = (x * 7 + y * 13) % 10 - 5
-                    wall_col = (60 + shade, 60 + shade, 70 + shade)
+                    if current_biome == "hell":
+                        shade = (x * 7 + y * 13) % 10 - 5
+                        wall_col = (80 + shade, 20 + shade, 20 + shade)
+                    else:
+                        shade = (x * 7 + y * 13) % 10 - 5
+                        wall_col = (60 + shade, 60 + shade, 70 + shade)
                     pygame.draw.rect(screen, wall_col, (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x, pixel_y + 20), (pixel_x + TILE_SIZE, pixel_y + 20), 2)
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x + 20, pixel_y), (pixel_x + 20, pixel_y + 20), 2)
@@ -539,22 +607,26 @@ while running:
                     pygame.draw.line(screen, (40, 40, 50), (pixel_x + 30, pixel_y + 20), (pixel_x + 30, pixel_y + TILE_SIZE), 2)
                     pygame.draw.rect(screen, (30, 30, 40), (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE), 1)
                 else:
-                    floor_color = (25, 25, 30) if (x + y) % 2 == 0 else (30, 30, 35)
+                    if current_biome == "hell":
+                        floor_color = (40, 20, 20) if (x + y) % 2 == 0 else (45, 25, 25)
+                    else:
+                        floor_color = (25, 25, 30) if (x + y) % 2 == 0 else (30, 30, 35)
+                        
                     pygame.draw.rect(screen, floor_color, (pixel_x, pixel_y, TILE_SIZE, TILE_SIZE))
-                    
-                    shadow_col = (15, 15, 20)
+                    shadow_col = (15, 15, 20) if current_biome == "dungeon" else (20, 5, 5)
                     if y > 0 and level_map[y-1][x] == 1: pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y, TILE_SIZE, 8))
                     if y < GRID_HEIGHT - 1 and level_map[y+1][x] == 1: pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y + TILE_SIZE - 8, TILE_SIZE, 8))
                     if x > 0 and level_map[y][x-1] == 1: pygame.draw.rect(screen, shadow_col, (pixel_x, pixel_y, 8, TILE_SIZE))
                     if x < GRID_WIDTH - 1 and level_map[y][x+1] == 1: pygame.draw.rect(screen, shadow_col, (pixel_x + TILE_SIZE - 8, pixel_y, 8, TILE_SIZE))
-                    if (x * 3 + y * 7) % 11 == 0: pygame.draw.line(screen, (20, 20, 25), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
+                    if (x * 3 + y * 7) % 11 == 0: pygame.draw.line(screen, (20, 20, 25) if current_biome == "dungeon" else (20, 5, 5), (pixel_x + 10, pixel_y + 10), (pixel_x + 20, pixel_y + 30), 1)
                         
-        if current_level == 1 and intro_alpha < 100:
-            sx, sy = 10, 7
-            pygame.draw.rect(screen, (50, 50, 50), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+10), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+10), 3)
-            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+20), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+20), 3)
-            pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+30), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+30), 3)
+        if current_level == 1 or current_level == 4:
+            if intro_alpha < 100:
+                sx, sy = 10, 7
+                pygame.draw.rect(screen, (50, 50, 50) if current_biome == "dungeon" else (80, 20, 20), (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+10), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+10), 3)
+                pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+20), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+20), 3)
+                pygame.draw.line(screen, (100, 100, 100), (sx*TILE_SIZE, sy*TILE_SIZE+30), (sx*TILE_SIZE+TILE_SIZE, sy*TILE_SIZE+30), 3)
 
         for bx, by in blood_splats:
             pygame.draw.circle(screen, (120, 0, 0), (bx * TILE_SIZE + 15, by * TILE_SIZE + 25), 6)
@@ -566,6 +638,12 @@ while running:
             pygame.draw.circle(screen, (255, 120, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 7)
             pygame.draw.circle(screen, (255, 220, 0), (tx*TILE_SIZE + 20, ty*TILE_SIZE + 15), 4)
             pygame.draw.rect(screen, (80, 40, 0), (tx*TILE_SIZE + 16, ty*TILE_SIZE + 20, 8, 15))
+            
+        for lx, ly in lava_tiles:
+            pygame.draw.rect(screen, (255, 80, 0), (lx * TILE_SIZE, ly * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            pygame.draw.circle(screen, (255, 200, 0), (lx * TILE_SIZE + 10, ly * TILE_SIZE + 10), 5)
+            pygame.draw.circle(screen, (255, 200, 0), (lx * TILE_SIZE + 30, ly * TILE_SIZE + 20), 6)
+            pygame.draw.circle(screen, (255, 200, 0), (lx * TILE_SIZE + 15, ly * TILE_SIZE + 35), 4)
 
         for tx, ty in toxic_tiles:
             pygame.draw.rect(screen, (50, 200, 50), (tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE))
@@ -578,8 +656,6 @@ while running:
             if spikes_up:
                 pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
                 pygame.draw.polygon(screen, (200, 200, 200), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
-                pygame.draw.polygon(screen, (150, 0, 0), [(sx*TILE_SIZE+5, sy*TILE_SIZE+35), (sx*TILE_SIZE+15, sy*TILE_SIZE+15), (sx*TILE_SIZE+25, sy*TILE_SIZE+35)])
-                pygame.draw.polygon(screen, (150, 0, 0), [(sx*TILE_SIZE+15, sy*TILE_SIZE+35), (sx*TILE_SIZE+25, sy*TILE_SIZE+15), (sx*TILE_SIZE+35, sy*TILE_SIZE+35)])
             else:
                 pygame.draw.rect(screen, (30, 30, 30), (sx*TILE_SIZE+5, sy*TILE_SIZE+5, 30, 30))
                 pygame.draw.circle(screen, (0, 0, 0), (sx*TILE_SIZE+10, sy*TILE_SIZE+10), 3)
@@ -598,6 +674,12 @@ while running:
         if potion_alive: pygame.draw.rect(screen, (0, 150, 255), (potion_x * TILE_SIZE, potion_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         if buff_alive: pygame.draw.rect(screen, (255, 255, 0), (buff_x * TILE_SIZE, buff_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         if sword_alive: pygame.draw.rect(screen, (220, 220, 220), (sword_x * TILE_SIZE, sword_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        if bow_alive:
+            if has_bow_img: screen.blit(bow_img, (bow_x * TILE_SIZE - TILE_SIZE // 2, bow_y * TILE_SIZE - TILE_SIZE // 2))
+            else: pygame.draw.rect(screen, (0, 255, 0), (bow_x * TILE_SIZE, bow_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        if axe_alive:
+            if has_axe_img: screen.blit(axe_img, (axe_x * TILE_SIZE - TILE_SIZE // 2, axe_y * TILE_SIZE - TILE_SIZE // 2))
+            else: pygame.draw.rect(screen, (200, 100, 50), (axe_x * TILE_SIZE, axe_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
         if portal_alive: pygame.draw.rect(screen, (200, 0, 255), (portal_x * TILE_SIZE, portal_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
             
         if enemy_alive:
@@ -634,6 +716,8 @@ while running:
         screen.blit(info_text, (10, 10))
         
         if has_staff: screen.blit(font.render(texts[current_lang]['staff'].format(staff_uses), True, (255, 165, 0)), (10, 35))
+        elif has_bow: screen.blit(font.render(texts[current_lang]['bow'], True, (0, 255, 0)), (10, 35))
+        elif has_axe: screen.blit(font.render(texts[current_lang]['axe'], True, (200, 100, 50)), (10, 35))
         elif has_sword: screen.blit(font.render(texts[current_lang]['sword'], True, (220, 220, 220)), (10, 35))
 
         if player_speed_boost > 0: screen.blit(font.render(f"Speed Boost: {player_speed_boost}", True, (255, 255, 0)), (10, 60))
@@ -647,7 +731,7 @@ while running:
         for p in particles:
             pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), max(1, int(p["life"] / 5)))
 
-        if current_level == 1 and (intro_alpha > 0 or intro_timer > 0):
+        if (current_level == 1 or current_level == 4) and (intro_alpha > 0 or intro_timer > 0):
             if intro_timer > 0: intro_timer -= 1
             else:
                 intro_alpha -= 1.2
@@ -662,7 +746,8 @@ while running:
                 text_alpha = int(intro_alpha) if intro_timer <= 0 else 255
                 text_alpha = min(255, int(intro_alpha * 1.5)) if intro_timer <= 0 else 255
                 if text_alpha > 0:
-                    intro_text_surface = big_font.render(texts[current_lang]['intro'], True, (255, 255, 255))
+                    txt_key = 'intro_hell' if current_biome == "hell" else 'intro'
+                    intro_text_surface = big_font.render(texts[current_lang][txt_key], True, (255, 255, 255))
                     intro_text_surface.set_alpha(text_alpha)
                     screen.blit(intro_text_surface, (WIDTH//2 - intro_text_surface.get_width()//2, HEIGHT//2 - 20))
 
@@ -707,6 +792,27 @@ while running:
                     particles = []
                     game_state = "CHAR_SELECT"
                 elif event.key == pygame.K_ESCAPE:
+                    particles = []
+                    game_state = "MAIN_MENU"
+
+    elif game_state == "GAME_WIN":
+        screen.fill((20, 50, 20))
+        win_text = big_font.render(texts[current_lang]['win'], True, (0, 255, 0))
+        screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2 - 60))
+        
+        sub_text = font.render(texts[current_lang]['win_text'], True, (255, 255, 255))
+        screen.blit(sub_text, (WIDTH//2 - sub_text.get_width()//2, HEIGHT//2 + 10))
+        
+        menu_text = font.render(texts[current_lang]['win_esc'], True, (150, 150, 150))
+        screen.blit(menu_text, (WIDTH//2 - menu_text.get_width()//2, HEIGHT//2 + 60))
+        
+        for p in particles:
+            pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), max(1, int(p["life"] / 5)))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
                     particles = []
                     game_state = "MAIN_MENU"
 
